@@ -1,0 +1,474 @@
+.csv-database-container {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.csv-db-wrapper {
+  min-width: 100%;
+  display: inline-block;
+}
+
+/* Table */
+.csv-db-table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* Header */
+.csv-db-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.csv-db-header-cell {
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-right: 1px solid var(--background-modifier-border);
+  padding: 0 8px;
+  height: 32px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.csv-db-header-cell:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* Resize handle */
+.csv-db-resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 1;
+}
+
+.csv-db-resize-handle:hover,
+.csv-db-resizing .csv-db-resize-handle {
+  background: var(--interactive-accent);
+}
+
+body.csv-db-resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+.csv-db-header-icon {
+  margin-right: 4px;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.csv-db-header-name {
+  font-size: 12px;
+}
+
+.csv-db-add-column-cell {
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  width: 32px;
+  min-width: 32px;
+  padding: 0;
+  text-align: center;
+}
+
+.csv-db-add-column-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.csv-db-add-column-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* Rows */
+.csv-db-row {
+  position: relative;
+}
+
+.csv-db-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.csv-db-row:hover .csv-db-row-delete {
+  opacity: 1;
+}
+
+/* Cells */
+.csv-db-cell {
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-right: 1px solid var(--background-modifier-border);
+  padding: 6px 8px;
+  min-height: 32px;
+  height: 32px;
+  font-size: 14px;
+  color: var(--text-normal);
+  line-height: 1.5;
+  cursor: pointer;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.csv-db-cell-spacer {
+  width: 32px;
+  min-width: 32px;
+  border-right: none;
+  cursor: default;
+}
+
+/* Row actions */
+.csv-db-row-action {
+  border: none;
+  width: 0;
+  padding: 0;
+  position: relative;
+}
+
+.csv-db-row-delete {
+  position: absolute;
+  right: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 3px;
+}
+
+.csv-db-row-delete:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+
+/* Checkbox */
+.csv-db-checkbox {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--text-faint);
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.csv-db-checkbox.is-checked {
+  background: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+.csv-db-checkbox-icon {
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Tags */
+.csv-db-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+/* Cell editing */
+.csv-db-cell-editing {
+  padding: 0;
+  position: relative;
+}
+
+.csv-db-cell-input {
+  width: 100%;
+  height: 100%;
+  min-height: 30px;
+  border: 2px solid var(--interactive-accent);
+  border-radius: 0;
+  padding: 4px 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* Select dropdown */
+.csv-db-dropdown {
+  position: fixed;
+  background: var(--background-primary);
+  border-radius: 4px;
+  box-shadow: var(--shadow-s);
+  z-index: 1000;
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.csv-db-dropdown-search {
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: 14px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.csv-db-dropdown-list {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.csv-db-dropdown-create {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.csv-db-dropdown-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-normal);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.csv-db-dropdown-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.csv-db-dropdown-item.is-selected {
+  background: rgba(var(--interactive-accent-rgb), 0.08);
+}
+
+.csv-db-dropdown-check {
+  width: 14px;
+  font-size: 12px;
+  color: var(--interactive-accent);
+  flex-shrink: 0;
+}
+
+.csv-db-dropdown-clear {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--background-modifier-border);
+  margin-top: 4px;
+}
+
+.csv-db-dropdown-clear:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* New row button */
+.csv-db-new-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  height: 32px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  user-select: none;
+}
+
+.csv-db-new-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.csv-db-new-row-icon {
+  margin-right: 4px;
+  font-size: 16px;
+}
+
+.csv-db-new-row-text {
+  font-size: 14px;
+}
+
+/* Column modal */
+.csv-db-modal-field {
+  margin-bottom: 16px;
+}
+
+.csv-db-modal-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.csv-db-modal-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+}
+
+.csv-db-modal-input:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.25);
+}
+
+.csv-db-modal-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+}
+
+.csv-db-modal-select:focus {
+  border-color: var(--interactive-accent);
+}
+
+/* Options editor in modal */
+.csv-db-options-list {
+  margin-top: 8px;
+}
+
+.csv-db-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.csv-db-option-value-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+}
+
+.csv-db-option-value-input:focus {
+  border-color: var(--interactive-accent);
+}
+
+.csv-db-option-color-select {
+  padding: 4px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+}
+
+.csv-db-option-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+}
+
+.csv-db-option-remove-btn:hover {
+  color: #E03E3E;
+}
+
+.csv-db-add-option-btn {
+  background: none;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  width: 100%;
+  text-align: left;
+  margin-top: 4px;
+}
+
+.csv-db-add-option-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* Modal buttons */
+.csv-db-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.csv-db-modal-btn {
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+}
+
+.csv-db-modal-btn-primary {
+  background: var(--interactive-accent);
+  color: white;
+}
+
+.csv-db-modal-btn-primary:hover {
+  background: var(--interactive-accent-hover);
+}
+
+.csv-db-modal-btn-danger {
+  background: none;
+  color: #E03E3E;
+  margin-left: auto;
+}
+
+.csv-db-modal-btn-danger:hover {
+  background: rgba(224, 62, 62, 0.08);
+}

@@ -1,0 +1,10 @@
+{
+  "id": "csv-database",
+  "name": "CSV Database",
+  "version": "0.1.0",
+  "minAppVersion": "0.15.0",
+  "description": "Advanced database view for CSV files",
+  "author": "jysperm",
+  "main": "main.js",
+  "isDesktopOnly": false
+}

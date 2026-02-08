@@ -1,0 +1,112 @@
+# CSV Database Plugin
+
+## CSV File Format
+
+### Header Row
+
+The first row of the CSV file contains column definitions. Each cell in the header row is a JSON object:
+
+```
+"{""name"":""Title"",""type"":""text""}","{""name"":""Status"",""type"":""select"",""options"":[{""value"":""Todo"",""color"":""red""},{""value"":""Done"",""color"":""green""}]}"
+```
+
+### ColumnDef Schema
+
+```typescript
+interface ColumnDef {
+  name: string;
+  type: "text" | "number" | "date" | "checkbox" | "select" | "multiselect";
+  options?: Array<{ value: string; color?: string }>;
+  width?: number;  // column width in pixels, default 180
+}
+```
+
+Color values: `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`.
+
+### Data Storage by Type
+
+| Type        | Storage Format                          | Example            |
+| ----------- | --------------------------------------- | ------------------ |
+| text        | Plain text                              | `Hello world`      |
+| number      | Numeric string                          | `42.5`             |
+| date        | ISO 8601 date                           | `2024-01-15`       |
+| checkbox    | `true` / `false`                        | `true`             |
+| select      | Option value string                     | `Todo`             |
+| multiselect | Pipe-separated values                   | `Tag1\|Tag2\|Tag3` |
+
+### Example CSV File
+
+```csv
+"{""name"":""Name"",""type"":""text""}","{""name"":""Status"",""type"":""select"",""options"":[{""value"":""Todo"",""color"":""red""},{""value"":""In Progress"",""color"":""yellow""},{""value"":""Done"",""color"":""green""}]}","{""name"":""Due Date"",""type"":""date""}","{""name"":""Priority"",""type"":""number""}","{""name"":""Completed"",""type"":""checkbox""}"
+Task 1,Todo,2024-03-01,1,false
+Task 2,In Progress,2024-03-15,2,true
+```
+
+## Core Architecture
+
+`DatabasePlugin` (`main.ts`) registers the view type and file extension. `DatabaseView` (`database-view.ts`) extends Obsidian's `TextFileView`, bridging file I/O with a React component tree mounted via `createRoot`. `csv-parser.ts` handles CSV parsing/serialization using PapaParse.
+
+The React UI is rooted in `DatabaseTable`, which uses `useReducer` to manage the `DatabaseModel` state. Obsidian pushes data in via `setViewData` → `parseCSV` → dispatch; user edits dispatch actions that flow back via `onModelChange` → `requestSave` → `serializeCSV`.
+
+## UI/UX Specification
+
+### Color Palette
+
+- Primary text: `#37352F`
+- Muted text: `rgba(55,53,47,0.65)`
+- Light muted text: `rgba(55,53,47,0.5)`
+- Border: `#E9E9E7`
+- Header background: `#F7F6F3`
+- Row hover: `rgba(55,53,47,0.04)`
+- Focus ring: `#2383E2`
+- Checkbox checked: `#2383E2`
+
+### Tag Color Palette (9 Colors)
+
+| Color  | Background | Text      |
+| ------ | ---------- | --------- |
+| gray   | `#E3E2E080` | `#5A5A5A` |
+| brown  | `#EEE0DA`   | `#6B4C3B` |
+| orange | `#FADEC9`   | `#AD5700` |
+| yellow | `#FDECC8`   | `#AD7700` |
+| green  | `#DBEDDB`   | `#2B6B2B` |
+| blue   | `#D3E5EF`   | `#24548F` |
+| purple | `#E8DEEE`   | `#6940A5` |
+| pink   | `#F5E0E9`   | `#AD1A72` |
+| red    | `#FFE2DD`   | `#C4554D` |
+
+Default (no color): same as `gray`.
+
+### Typography
+
+- Header cells: `12px`, `500` weight, muted color
+- Body cells: `14px`, `400` weight, primary color
+- Tag labels: `12px`, `400` weight
+- Line height: `1.5`
+
+### Spacing
+
+- Cell padding: `8px`
+- Minimum row height: `32px`
+- Tag padding: `0 6px`
+- Tag border-radius: `3px`
+
+### Interactive States
+
+- Row hover: background `rgba(55,53,47,0.04)`
+- Cell edit focus: `2px solid #2383E2` border (inset, replaces normal border)
+- Dropdown shadow (3 layers):
+  ```
+  0 0 0 1px rgba(15,15,15,0.05),
+  0 3px 6px rgba(15,15,15,0.1),
+  0 9px 24px rgba(15,15,15,0.2)
+  ```
+
+### Layout
+
+- Table has no outer border
+- Columns separated by `1px` `#E9E9E7` vertical lines
+- Rows separated by `1px` `#E9E9E7` horizontal lines
+- Bottom row: "+ New" button, full width, muted text
+- Right side of header: "+" button, `32x32px`, for adding columns
+- Checkbox: `14x14px`, `border-radius: 2px`, checked state is `#2383E2` background with white checkmark
