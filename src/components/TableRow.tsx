@@ -8,6 +8,7 @@ interface TableRowProps {
   onSetCell: (rowIdx: number, colIdx: number, value: string) => void;
   onDeleteRow: (rowIdx: number) => void;
   onAddSelectOption: (colIdx: number, option: SelectOption) => void;
+  onUpdateSelectOption: (colIdx: number, oldValue: string, newOption: SelectOption | null) => void;
 }
 
 export function TableRow({
@@ -17,6 +18,7 @@ export function TableRow({
   onSetCell,
   onDeleteRow,
   onAddSelectOption,
+  onUpdateSelectOption,
 }: TableRowProps) {
   return (
     <tr className="csv-db-row">
@@ -27,6 +29,7 @@ export function TableRow({
           column={col}
           onChange={(value) => onSetCell(rowIdx, colIdx, value)}
           onAddOption={(option) => onAddSelectOption(colIdx, option)}
+          onUpdateOption={(oldValue, newOption) => onUpdateSelectOption(colIdx, oldValue, newOption)}
         />
       ))}
       <td className="csv-db-cell csv-db-cell-spacer" />

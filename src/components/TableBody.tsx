@@ -7,6 +7,7 @@ interface TableBodyProps {
   onSetCell: (rowIdx: number, colIdx: number, value: string) => void;
   onDeleteRow: (rowIdx: number) => void;
   onAddSelectOption: (colIdx: number, option: SelectOption) => void;
+  onUpdateSelectOption: (colIdx: number, oldValue: string, newOption: SelectOption | null) => void;
 }
 
 export function TableBody({
@@ -15,6 +16,7 @@ export function TableBody({
   onSetCell,
   onDeleteRow,
   onAddSelectOption,
+  onUpdateSelectOption,
 }: TableBodyProps) {
   return (
     <tbody>
@@ -27,6 +29,7 @@ export function TableBody({
           onSetCell={onSetCell}
           onDeleteRow={onDeleteRow}
           onAddSelectOption={onAddSelectOption}
+          onUpdateSelectOption={onUpdateSelectOption}
         />
       ))}
     </tbody>

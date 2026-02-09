@@ -9,9 +9,10 @@ interface CellProps {
   column: ColumnDef;
   onChange: (value: string) => void;
   onAddOption: (option: SelectOption) => void;
+  onUpdateOption: (oldValue: string, newOption: SelectOption | null) => void;
 }
 
-export function Cell({ value, column, onChange, onAddOption }: CellProps) {
+export function Cell({ value, column, onChange, onAddOption, onUpdateOption }: CellProps) {
   if (column.type === "checkbox") {
     return (
       <td className="csv-db-cell">
@@ -27,6 +28,7 @@ export function Cell({ value, column, onChange, onAddOption }: CellProps) {
         column={column}
         onChange={onChange}
         onAddOption={onAddOption}
+        onUpdateOption={onUpdateOption}
       />
     );
   }
@@ -38,6 +40,7 @@ export function Cell({ value, column, onChange, onAddOption }: CellProps) {
         column={column}
         onChange={onChange}
         onAddOption={onAddOption}
+        onUpdateOption={onUpdateOption}
       />
     );
   }

@@ -242,13 +242,13 @@ body.csv-db-resizing {
 }
 
 .csv-db-dropdown-search {
-  width: 100%;
-  padding: 6px 12px;
+  flex: 1;
+  min-width: 60px;
+  padding: 2px 4px;
   border: none;
-  border-bottom: 1px solid var(--background-modifier-border);
   font-size: 14px;
   color: var(--text-normal);
-  background: var(--background-primary);
+  background: transparent;
   outline: none;
   box-sizing: border-box;
 }
@@ -258,9 +258,14 @@ body.csv-db-resizing {
   overflow-y: auto;
 }
 
+.csv-db-dropdown-hint {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .csv-db-dropdown-create {
   color: var(--text-muted);
-  font-style: italic;
 }
 
 .csv-db-dropdown-item {
@@ -288,17 +293,163 @@ body.csv-db-resizing {
   flex-shrink: 0;
 }
 
-.csv-db-dropdown-clear {
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text-muted);
-  border-top: 1px solid var(--background-modifier-border);
-  margin-top: 4px;
+/* Combined input area with tags */
+.csv-db-dropdown-input-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  cursor: text;
 }
 
-.csv-db-dropdown-clear:hover {
+/* Tag with remove button */
+.csv-db-tag-removable {
+  padding-right: 2px;
+}
+
+.csv-db-tag-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+  font-size: 9px;
+  border-radius: 2px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.csv-db-tag-remove-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* More button on option rows */
+.csv-db-option-more-btn {
+  margin-left: auto;
+  padding: 2px 4px;
+  font-size: 14px;
+  color: var(--text-faint);
+  cursor: pointer;
+  border-radius: 3px;
+  opacity: 0;
+  flex-shrink: 0;
+  letter-spacing: -1px;
+}
+
+.csv-db-dropdown-item:hover .csv-db-option-more-btn {
+  opacity: 1;
+}
+
+.csv-db-option-more-btn:hover {
   background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+
+/* Option edit popover */
+.csv-db-option-edit-popover {
+  position: fixed;
+  background: var(--background-primary);
+  border-radius: 4px;
+  box-shadow: var(--shadow-s);
+  z-index: 1001;
+  width: 260px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.csv-db-option-edit-panel {
+  padding: 8px;
+}
+
+.csv-db-option-edit-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 2px solid var(--interactive-accent);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 4px;
+}
+
+.csv-db-option-edit-delete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+}
+
+.csv-db-option-edit-delete:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.csv-db-option-edit-delete-icon {
+  font-size: 13px;
+}
+
+.csv-db-option-edit-separator {
+  height: 1px;
+  background: var(--background-modifier-border);
+  margin: 4px 0;
+}
+
+.csv-db-option-edit-colors-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  padding: 4px 8px 0;
+}
+
+.csv-db-option-edit-colors {
+  display: flex;
+  flex-direction: column;
+}
+
+.csv-db-option-edit-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.csv-db-option-edit-color-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.csv-db-option-edit-color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.csv-db-option-edit-color-name {
+  font-size: 14px;
+  color: var(--text-normal);
+  flex: 1;
+}
+
+.csv-db-option-edit-color-check {
+  font-size: 14px;
+  color: var(--text-normal);
+  flex-shrink: 0;
 }
 
 /* New row button */

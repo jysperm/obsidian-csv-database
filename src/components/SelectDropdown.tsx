@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ColumnDef, SelectOption } from "../types";
 import { pickColor } from "../constants";
 import { Tag } from "./Tag";
+import { OptionEditPanel } from "./OptionEditPanel";
 import { useClickOutside } from "../hooks/useClickOutside";
 
 interface SelectDropdownProps {
@@ -11,6 +12,7 @@ interface SelectDropdownProps {
   anchorRect: DOMRect;
   onSelect: (value: string) => void;
   onCreateOption: (option: SelectOption) => void;
+  onUpdateOption: (oldValue: string, newOption: SelectOption | null) => void;
   onClose: () => void;
 }
 
@@ -20,16 +22,20 @@ export function SelectDropdown({
   anchorRect,
   onSelect,
   onCreateOption,
+  onUpdateOption,
   onClose,
 }: SelectDropdownProps) {
   const [search, setSearch] = useState("");
+  const [editingOption, setEditingOption] = useState<SelectOption | null>(null);
+  const [editAnchorRect, setEditAnchorRect] = useState<DOMRect | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
 
-  useClickOutside([dropdownRef], handleClose);
+  useClickOutside([dropdownRef, popoverRef], handleClose);
 
   const options = column.options || [];
   const lower = search.toLowerCase();
@@ -45,6 +51,32 @@ export function SelectDropdown({
     onSelect(newOption.value);
   };
 
+  const handleMoreClick = (e: React.MouseEvent, option: SelectOption) => {
+    e.stopPropagation();
+    const btn = e.currentTarget as HTMLElement;
+    setEditAnchorRect(btn.getBoundingClientRect());
+    setEditingOption(option);
+  };
+
+  const handleUpdateOption = (oldValue: string, newOption: SelectOption | null) => {
+    onUpdateOption(oldValue, newOption);
+    if (newOption === null) {
+      setEditingOption(null);
+      setEditAnchorRect(null);
+    } else {
+      setEditingOption(newOption);
+    }
+  };
+
+  const handleEditClose = () => {
+    setEditingOption(null);
+    setEditAnchorRect(null);
+  };
+
+  const selectedOption = currentValue
+    ? options.find((o) => o.value === currentValue)
+    : null;
+
   return createPortal(
     <div
       ref={dropdownRef}
@@ -55,44 +87,64 @@ export function SelectDropdown({
         minWidth: `${anchorRect.width}px`,
       }}
     >
-      <input
-        className="csv-db-dropdown-search"
-        placeholder="Search or create..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        onClick={(e) => e.stopPropagation()}
-        autoFocus
-      />
+      <div className="csv-db-dropdown-input-area" onClick={() => {
+        const input = dropdownRef.current?.querySelector<HTMLInputElement>(".csv-db-dropdown-search");
+        input?.focus();
+      }}>
+        {selectedOption && (
+          <Tag
+            value={selectedOption.value}
+            color={selectedOption.color || "gray"}
+            onRemove={(e) => {
+              e.stopPropagation();
+              onSelect("");
+            }}
+          />
+        )}
+        <input
+          className="csv-db-dropdown-search"
+          placeholder={selectedOption ? "" : "Search or create..."}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+          autoFocus
+        />
+      </div>
+      <div className="csv-db-dropdown-hint">Select an option or create one</div>
       <div className="csv-db-dropdown-list">
-        {filtered.map((option) => (
-          <div
-            key={option.value}
-            className={`csv-db-dropdown-item ${option.value === currentValue ? "is-selected" : ""}`}
-            onClick={() => onSelect(option.value)}
-          >
-            <span className="csv-db-dropdown-check">
-              {option.value === currentValue ? "✓" : ""}
-            </span>
-            <Tag value={option.value} color={option.color || "gray"} />
-          </div>
-        ))}
         {search.trim() && !exactMatch && (
           <div
             className="csv-db-dropdown-item csv-db-dropdown-create"
             onClick={handleCreate}
           >
-            Create &quot;{search.trim()}&quot;
+            Create <Tag value={search.trim()} color={pickColor(options.length)} />
           </div>
         )}
-        {currentValue && (
+        {filtered.map((option) => (
           <div
-            className="csv-db-dropdown-clear"
-            onClick={() => onSelect("")}
+            key={option.value}
+            className="csv-db-dropdown-item"
+            onClick={() => onSelect(option.value)}
           >
-            Clear
+            <Tag value={option.value} color={option.color || "gray"} />
+            <span
+              className="csv-db-option-more-btn"
+              onClick={(e) => handleMoreClick(e, option)}
+            >
+              ···
+            </span>
           </div>
-        )}
+        ))}
       </div>
+      {editingOption && editAnchorRect && (
+        <OptionEditPanel
+          option={editingOption}
+          anchorRect={editAnchorRect}
+          panelRef={popoverRef}
+          onUpdate={handleUpdateOption}
+          onClose={handleEditClose}
+        />
+      )}
     </div>,
     document.body
   );

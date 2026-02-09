@@ -16,7 +16,8 @@ type Action =
   | { type: "DELETE_COLUMN"; colIdx: number }
   | { type: "UPDATE_COLUMN"; colIdx: number; name: string; colType: ColumnType; options: SelectOption[] }
   | { type: "SET_COLUMN_WIDTH"; colIdx: number; width: number }
-  | { type: "ADD_SELECT_OPTION"; colIdx: number; option: SelectOption };
+  | { type: "ADD_SELECT_OPTION"; colIdx: number; option: SelectOption }
+  | { type: "UPDATE_SELECT_OPTION"; colIdx: number; oldValue: string; newOption: SelectOption | null };
 
 function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
   switch (action.type) {
@@ -86,6 +87,58 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
         return { ...col, options };
       });
       return { ...state, columns };
+    }
+
+    case "UPDATE_SELECT_OPTION": {
+      const { colIdx, oldValue, newOption } = action;
+      const col = state.columns[colIdx];
+      const colType = col.type;
+
+      // Update column options
+      let newOptions: SelectOption[];
+      if (newOption === null) {
+        // Delete
+        newOptions = (col.options || []).filter((o) => o.value !== oldValue);
+      } else {
+        newOptions = (col.options || []).map((o) =>
+          o.value === oldValue ? newOption : o
+        );
+      }
+      const columns = state.columns.map((c, i) =>
+        i === colIdx ? { ...c, options: newOptions } : c
+      );
+
+      // Update row data if renamed or deleted
+      const renamed = newOption !== null && newOption.value !== oldValue;
+      const deleted = newOption === null;
+      if (!renamed && !deleted) {
+        return { ...state, columns };
+      }
+
+      const rows = state.rows.map((row) => {
+        const cell = row[colIdx];
+        if (!cell) return row;
+
+        let newCell: string;
+        if (colType === "multiselect") {
+          const parts = cell.split("|");
+          const updated = deleted
+            ? parts.filter((p) => p !== oldValue)
+            : parts.map((p) => (p === oldValue ? newOption!.value : p));
+          newCell = updated.join("|");
+        } else {
+          if (cell === oldValue) {
+            newCell = deleted ? "" : newOption!.value;
+          } else {
+            newCell = cell;
+          }
+        }
+
+        if (newCell === cell) return row;
+        return row.map((c, ci) => (ci === colIdx ? newCell : c));
+      });
+
+      return { columns, rows };
     }
 
     default:
@@ -158,6 +211,10 @@ export function DatabaseTable({
     dispatch({ type: "ADD_SELECT_OPTION", colIdx, option });
   }, []);
 
+  const handleUpdateSelectOption = useCallback((colIdx: number, oldValue: string, newOption: SelectOption | null) => {
+    dispatch({ type: "UPDATE_SELECT_OPTION", colIdx, oldValue, newOption });
+  }, []);
+
   const handleColumnClick = useCallback(
     (colIdx: number) => {
       const col = model.columns[colIdx];
@@ -211,6 +268,7 @@ export function DatabaseTable({
           onSetCell={handleSetCell}
           onDeleteRow={handleDeleteRow}
           onAddSelectOption={handleAddSelectOption}
+          onUpdateSelectOption={handleUpdateSelectOption}
         />
       </table>
       <NewRowButton onAddRow={handleAddRow} />

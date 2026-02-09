@@ -8,9 +8,10 @@ interface MultiSelectCellProps {
   column: ColumnDef;
   onChange: (value: string) => void;
   onAddOption: (option: SelectOption) => void;
+  onUpdateOption: (oldValue: string, newOption: SelectOption | null) => void;
 }
 
-export function MultiSelectCell({ value, column, onChange, onAddOption }: MultiSelectCellProps) {
+export function MultiSelectCell({ value, column, onChange, onAddOption, onUpdateOption }: MultiSelectCellProps) {
   const [open, setOpen] = useState(false);
   const tdRef = useRef<HTMLTableCellElement>(null);
 
@@ -24,7 +25,6 @@ export function MultiSelectCell({ value, column, onChange, onAddOption }: MultiS
 
   const handleCommit = (newValues: string[]) => {
     onChange(newValues.join("|"));
-    setOpen(false);
   };
 
   return (
@@ -40,6 +40,7 @@ export function MultiSelectCell({ value, column, onChange, onAddOption }: MultiS
           anchorRect={tdRef.current.getBoundingClientRect()}
           onCommit={handleCommit}
           onCreateOption={onAddOption}
+          onUpdateOption={onUpdateOption}
           onClose={() => setOpen(false)}
         />
       )}

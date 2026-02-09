@@ -8,9 +8,10 @@ interface SelectCellProps {
   column: ColumnDef;
   onChange: (value: string) => void;
   onAddOption: (option: SelectOption) => void;
+  onUpdateOption: (oldValue: string, newOption: SelectOption | null) => void;
 }
 
-export function SelectCell({ value, column, onChange, onAddOption }: SelectCellProps) {
+export function SelectCell({ value, column, onChange, onAddOption, onUpdateOption }: SelectCellProps) {
   const [open, setOpen] = useState(false);
   const tdRef = useRef<HTMLTableCellElement>(null);
 
@@ -39,6 +40,7 @@ export function SelectCell({ value, column, onChange, onAddOption }: SelectCellP
           anchorRect={tdRef.current.getBoundingClientRect()}
           onSelect={handleSelect}
           onCreateOption={onAddOption}
+          onUpdateOption={onUpdateOption}
           onClose={() => setOpen(false)}
         />
       )}
