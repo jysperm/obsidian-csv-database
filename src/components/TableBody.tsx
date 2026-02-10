@@ -1,9 +1,9 @@
-import { ColumnDef, SelectOption } from "../types";
+import { DisplayColumn, SelectOption } from "../types";
 import { TableRow } from "./TableRow";
 
 interface TableBodyProps {
   rows: string[][];
-  columns: ColumnDef[];
+  displayColumns: DisplayColumn[];
   onSetCell: (rowIdx: number, colIdx: number, value: string) => void;
   onDeleteRow: (rowIdx: number) => void;
   onAddSelectOption: (colIdx: number, option: SelectOption) => void;
@@ -12,7 +12,7 @@ interface TableBodyProps {
 
 export function TableBody({
   rows,
-  columns,
+  displayColumns,
   onSetCell,
   onDeleteRow,
   onAddSelectOption,
@@ -25,7 +25,7 @@ export function TableBody({
           key={rowIdx}
           rowIdx={rowIdx}
           row={row}
-          columns={columns}
+          displayColumns={displayColumns}
           onSetCell={onSetCell}
           onDeleteRow={onDeleteRow}
           onAddSelectOption={onAddSelectOption}

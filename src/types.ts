@@ -12,6 +12,12 @@ export interface ColumnDef {
   type: ColumnType;
   options?: SelectOption[];
   width?: number;
+  columnIndex?: number;
+}
+
+export interface DisplayColumn {
+  col: ColumnDef;
+  dataIdx: number;
 }
 
 export interface DatabaseModel {

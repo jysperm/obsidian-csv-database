@@ -1,11 +1,12 @@
-import { useReducer, useEffect, useRef, useCallback } from "react";
+import { useReducer, useEffect, useRef, useCallback, useMemo } from "react";
 import { App } from "obsidian";
-import { DatabaseModel, ColumnDef, ColumnType, SelectOption } from "../types";
+import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn } from "../types";
 import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";
 import { NewRowButton } from "./NewRowButton";
 import { ColumnModalWrapper } from "./ColumnModal";
 import { useColumnResize } from "../hooks/useColumnResize";
+import { useColumnDrag } from "../hooks/useColumnDrag";
 
 type Action =
   | { type: "SET_MODEL"; model: DatabaseModel; fromExternal?: boolean }
@@ -17,7 +18,8 @@ type Action =
   | { type: "UPDATE_COLUMN"; colIdx: number; name: string; colType: ColumnType; options: SelectOption[] }
   | { type: "SET_COLUMN_WIDTH"; colIdx: number; width: number }
   | { type: "ADD_SELECT_OPTION"; colIdx: number; option: SelectOption }
-  | { type: "UPDATE_SELECT_OPTION"; colIdx: number; oldValue: string; newOption: SelectOption | null };
+  | { type: "UPDATE_SELECT_OPTION"; colIdx: number; oldValue: string; newOption: SelectOption | null }
+  | { type: "REORDER_COLUMN"; dataIdx1: number; dataIdx2: number };
 
 function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
   switch (action.type) {
@@ -44,13 +46,23 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
     }
 
     case "ADD_COLUMN": {
-      const columns = [...state.columns, action.column];
+      const maxColumnIndex = state.columns.reduce(
+        (max, col) => Math.max(max, col.columnIndex ?? 0),
+        -1
+      );
+      const columns = [...state.columns, { ...action.column, columnIndex: maxColumnIndex + 1 }];
       const rows = state.rows.map((row) => [...row, ""]);
       return { columns, rows };
     }
 
     case "DELETE_COLUMN": {
-      const columns = state.columns.filter((_, i) => i !== action.colIdx);
+      const deletedColumnIndex = state.columns[action.colIdx].columnIndex!;
+      const columns = state.columns
+        .filter((_, i) => i !== action.colIdx)
+        .map((col) => ({
+          ...col,
+          columnIndex: col.columnIndex! > deletedColumnIndex ? col.columnIndex! - 1 : col.columnIndex!,
+        }));
       const rows = state.rows.map((row) => row.filter((_, i) => i !== action.colIdx));
       return { columns, rows };
     }
@@ -141,6 +153,18 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
       return { columns, rows };
     }
 
+    case "REORDER_COLUMN": {
+      const { dataIdx1, dataIdx2 } = action;
+      const ci1 = state.columns[dataIdx1].columnIndex!;
+      const ci2 = state.columns[dataIdx2].columnIndex!;
+      const columns = state.columns.map((col, i) => {
+        if (i === dataIdx1) return { ...col, columnIndex: ci2 };
+        if (i === dataIdx2) return { ...col, columnIndex: ci1 };
+        return col;
+      });
+      return { ...state, columns };
+    }
+
     default:
       return state;
   }
@@ -163,6 +187,19 @@ export function DatabaseTable({
   const isExternalUpdate = useRef(false);
   const prevModelRef = useRef(model);
 
+  // Compute display order: columns sorted by columnIndex
+  const displayColumns: DisplayColumn[] = useMemo(
+    () =>
+      model.columns
+        .map((col, i) => ({ col, dataIdx: i }))
+        .sort((a, b) => (a.col.columnIndex ?? 0) - (b.col.columnIndex ?? 0)),
+    [model.columns]
+  );
+
+  // Ref for stable access in callbacks
+  const displayColumnsRef = useRef(displayColumns);
+  displayColumnsRef.current = displayColumns;
+
   // Register setter for external model pushes (from setViewData)
   useEffect(() => {
     setModelSetter((newModel: DatabaseModel) => {
@@ -184,12 +221,24 @@ export function DatabaseTable({
     }
   }, [model, onModelChange]);
 
-  const handleResizeEnd = useCallback((colIdx: number, width: number) => {
-    dispatch({ type: "SET_COLUMN_WIDTH", colIdx, width });
+  const handleResizeEnd = useCallback((displayIdx: number, width: number) => {
+    const dataIdx = displayColumnsRef.current[displayIdx].dataIdx;
+    dispatch({ type: "SET_COLUMN_WIDTH", colIdx: dataIdx, width });
   }, []);
 
   const { colGroupRef, tableRef, onResizeStart, consumeJustResized } =
     useColumnResize({ onResizeEnd: handleResizeEnd });
+
+  const handleReorderColumn = useCallback((fromDisplayIdx: number, toDisplayIdx: number) => {
+    const dc = displayColumnsRef.current;
+    const insertIdx = toDisplayIdx > fromDisplayIdx ? toDisplayIdx - 1 : toDisplayIdx;
+    const dataIdx1 = dc[fromDisplayIdx].dataIdx;
+    const dataIdx2 = dc[insertIdx].dataIdx;
+    dispatch({ type: "REORDER_COLUMN", dataIdx1, dataIdx2 });
+  }, []);
+
+  const { dragState, onDragStart, consumeJustDragged } =
+    useColumnDrag({ onReorder: handleReorderColumn, tableRef });
 
   const handleSetCell = useCallback((rowIdx: number, colIdx: number, value: string) => {
     dispatch({ type: "SET_CELL", rowIdx, colIdx, value });
@@ -216,16 +265,16 @@ export function DatabaseTable({
   }, []);
 
   const handleColumnClick = useCallback(
-    (colIdx: number) => {
-      const col = model.columns[colIdx];
+    (dataIdx: number) => {
+      const col = model.columns[dataIdx];
       const modal = new ColumnModalWrapper(
         app,
         col,
         (name, colType, options) => {
-          dispatch({ type: "UPDATE_COLUMN", colIdx, name, colType, options });
+          dispatch({ type: "UPDATE_COLUMN", colIdx: dataIdx, name, colType, options });
         },
         () => {
-          dispatch({ type: "DELETE_COLUMN", colIdx });
+          dispatch({ type: "DELETE_COLUMN", colIdx: dataIdx });
         }
       );
       modal.open();
@@ -233,9 +282,9 @@ export function DatabaseTable({
     [app, model.columns]
   );
 
-  // Compute total table width and render colgroup
+  // Compute total table width from display order
   let totalWidth = 0;
-  for (const col of model.columns) {
+  for (const { col } of displayColumns) {
     totalWidth += col.width ?? 180;
   }
   totalWidth += 32; // add-column button width
@@ -248,23 +297,24 @@ export function DatabaseTable({
         style={{ width: `${totalWidth}px` }}
       >
         <colgroup ref={colGroupRef}>
-          {model.columns.map((col, i) => (
+          {displayColumns.map(({ col }, i) => (
             <col key={i} style={{ width: `${col.width ?? 180}px` }} />
           ))}
           <col style={{ width: "32px" }} />
         </colgroup>
         <TableHeader
-          columns={model.columns}
-          model={model}
-          app={app}
+          displayColumns={displayColumns}
           onResizeStart={onResizeStart}
           consumeJustResized={consumeJustResized}
           onAddColumn={handleAddColumn}
           onColumnClick={handleColumnClick}
+          onDragStart={onDragStart}
+          consumeJustDragged={consumeJustDragged}
+          dragState={dragState}
         />
         <TableBody
           rows={model.rows}
-          columns={model.columns}
+          displayColumns={displayColumns}
           onSetCell={handleSetCell}
           onDeleteRow={handleDeleteRow}
           onAddSelectOption={handleAddSelectOption}

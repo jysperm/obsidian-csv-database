@@ -17,7 +17,8 @@ interface ColumnDef {
   name: string;
   type: "text" | "number" | "date" | "checkbox" | "select" | "multiselect";
   options?: Array<{ value: string; color?: string }>;
-  width?: number;  // column width in pixels, default 180
+  width?: number;         // column width in pixels, default 180
+  columnIndex?: number;   // display order, defaults to positional index
 }
 ```
 
@@ -47,6 +48,18 @@ Task 2,In Progress,2024-03-15,2,true
 `DatabasePlugin` (`main.ts`) registers the view type and file extension. `DatabaseView` (`database-view.ts`) extends Obsidian's `TextFileView`, bridging file I/O with a React component tree mounted via `createRoot`. `csv-parser.ts` handles CSV parsing/serialization using PapaParse.
 
 The React UI is rooted in `DatabaseTable`, which uses `useReducer` to manage the `DatabaseModel` state. Obsidian pushes data in via `setViewData` → `parseCSV` → dispatch; user edits dispatch actions that flow back via `onModelChange` → `requestSave` → `serializeCSV`.
+
+### Column Display Order
+
+Each `ColumnDef` has a `columnIndex` field that determines its display position. The column and row data order in the CSV file never changes — `rows[r][i]` always corresponds to `columns[i]`. Dragging columns only swaps `columnIndex` values; `serializeCSV` writes columns and rows in their original array order.
+
+`DatabaseTable` computes a `displayColumns: DisplayColumn[]` (sorted by `columnIndex`) for rendering. All UI components receive `displayColumns` and use `dataIdx` (the column's index in the data array) for data operations, and the rendering loop index for DOM operations (resize, drag).
+
+On parse, if a column has no `columnIndex` in its JSON (e.g. files created before this feature), it defaults to the positional index.
+
+### Column Drag-to-Reorder
+
+Drag interaction is handled by `useColumnDrag` hook. Mousedown on a header cell + 5px drag threshold enters drag mode. Columns swap in real-time as the cursor crosses the current column's boundary, with a 150ms CSS transform animation (slide) before each data commit. A direction lock prevents jitter when columns have different widths. `flushSync` ensures no visual flash between clearing transforms and committing the React state update.
 
 ## UI/UX Specification
 

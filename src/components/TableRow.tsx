@@ -1,10 +1,10 @@
-import { ColumnDef, SelectOption } from "../types";
+import { DisplayColumn, SelectOption } from "../types";
 import { Cell } from "./Cell";
 
 interface TableRowProps {
   rowIdx: number;
   row: string[];
-  columns: ColumnDef[];
+  displayColumns: DisplayColumn[];
   onSetCell: (rowIdx: number, colIdx: number, value: string) => void;
   onDeleteRow: (rowIdx: number) => void;
   onAddSelectOption: (colIdx: number, option: SelectOption) => void;
@@ -14,7 +14,7 @@ interface TableRowProps {
 export function TableRow({
   rowIdx,
   row,
-  columns,
+  displayColumns,
   onSetCell,
   onDeleteRow,
   onAddSelectOption,
@@ -22,14 +22,14 @@ export function TableRow({
 }: TableRowProps) {
   return (
     <tr className="csv-db-row">
-      {columns.map((col, colIdx) => (
+      {displayColumns.map(({ col, dataIdx }) => (
         <Cell
-          key={colIdx}
-          value={row[colIdx] || ""}
+          key={dataIdx}
+          value={row[dataIdx] || ""}
           column={col}
-          onChange={(value) => onSetCell(rowIdx, colIdx, value)}
-          onAddOption={(option) => onAddSelectOption(colIdx, option)}
-          onUpdateOption={(oldValue, newOption) => onUpdateSelectOption(colIdx, oldValue, newOption)}
+          onChange={(value) => onSetCell(rowIdx, dataIdx, value)}
+          onAddOption={(option) => onAddSelectOption(dataIdx, option)}
+          onUpdateOption={(oldValue, newOption) => onUpdateSelectOption(dataIdx, oldValue, newOption)}
         />
       ))}
       <td className="csv-db-cell csv-db-cell-spacer" />

@@ -13,14 +13,15 @@ export function parseCSV(csvText: string): DatabaseModel {
   }
 
   const headerRow = rawRows[0];
-  const columns: ColumnDef[] = headerRow.map((cell) => {
+  const columns: ColumnDef[] = headerRow.map((cell, i) => {
     try {
       const def = JSON.parse(cell) as ColumnDef;
       if (!def.name) def.name = "Untitled";
       if (!def.type) def.type = "text";
+      if (def.columnIndex == null) def.columnIndex = i;
       return def;
     } catch {
-      return { name: cell || "Untitled", type: "text" as const };
+      return { name: cell || "Untitled", type: "text" as const, columnIndex: i };
     }
   });
 

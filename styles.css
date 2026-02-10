@@ -39,7 +39,7 @@
   overflow: hidden;
 }
 
-.csv-db-header-cell:hover {
+body:not(.csv-db-dragging) .csv-db-header-cell:hover {
   background: var(--background-modifier-hover);
 }
 
@@ -54,7 +54,7 @@
   z-index: 1;
 }
 
-.csv-db-resize-handle:hover,
+body:not(.csv-db-dragging) .csv-db-resize-handle:hover,
 .csv-db-resizing .csv-db-resize-handle {
   background: var(--interactive-accent);
 }
@@ -62,6 +62,16 @@
 body.csv-db-resizing {
   cursor: col-resize !important;
   user-select: none !important;
+}
+
+/* Column drag-to-reorder */
+body.csv-db-dragging {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.csv-db-header-dragging {
+  opacity: 0.5;
 }
 
 .csv-db-header-icon {
