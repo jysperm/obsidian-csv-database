@@ -1,0 +1,16 @@
+"{""name"":""Name"",""type"":""text"",""width"":231}","{""name"":""Status"",""type"":""select"",""options"":[{""value"":""Backlog"",""color"":""gray""},{""value"":""Todo"",""color"":""blue""},{""value"":""In Progress"",""color"":""yellow""},{""value"":""In Review"",""color"":""purple""},{""value"":""Done"",""color"":""green""},{""value"":""Cancelled"",""color"":""red""}]}","{""name"":""Priority"",""type"":""select"",""options"":[{""value"":""Low"",""color"":""gray""},{""value"":""Medium"",""color"":""yellow""},{""value"":""High"",""color"":""orange""},{""value"":""Urgent"",""color"":""red""}]}","{""name"":""Tags"",""type"":""multiselect"",""options"":[{""value"":""Bug"",""color"":""red""},{""value"":""Feature"",""color"":""blue""},{""value"":""Docs"",""color"":""brown""},{""value"":""Refactor"",""color"":""purple""},{""value"":""Testing"",""color"":""green""},{""value"":""Design"",""color"":""pink""},{""value"":""Performance"",""color"":""orange""}]}","{""name"":""Assignee"",""type"":""text""}","{""name"":""Due Date"",""type"":""date""}","{""name"":""Story Points"",""type"":""number""}","{""name"":""Completed"",""type"":""checkbox""}"
+User authentication flow,Done,High,Feature|Design,Alice,2025-01-15,8,true
+Fix login page crash on Safari,Done,Urgent,Bug,Bob,2025-01-18,3,true
+Write API documentation,In Progress,Medium,Docs,Charlie,2025-02-10,5,false
+Refactor database query layer,In Progress,High,Refactor|Performance,Alice,2025-02-15,13,false
+Add dark mode support,Todo,Medium,Feature|Design,Diana,2025-02-20,8,false
+Set up CI/CD pipeline,Done,High,Feature,Bob,2025-01-20,5,true
+Fix pagination off-by-one error,In Review,Medium,Bug,Charlie,2025-02-05,2,false
+Add export to CSV feature,Todo,Low,Feature,Diana,2025-03-01,5,false
+Update unit tests for auth module,In Progress,Medium,Testing,Alice,2025-02-12,3,false
+Design settings page mockup,Done,Medium,Design,Diana,2025-01-25,3,true
+Optimize image loading performance,Backlog,Low,Performance,Bob,2025-03-15,8,false
+Fix broken links in README,Cancelled,Low,Docs|Bug,,2025-01-10,1,false
+Implement search functionality,Todo,High,Feature,Alice,2025-02-28,13,false
+Add input validation for forms,Backlog,Medium,Feature|Bug,Charlie,2025-03-10,5,false
+Write onboarding guide,Todo,Low,Docs|Design,Diana,2025-03-05,3,false
