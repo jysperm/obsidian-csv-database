@@ -42,8 +42,10 @@ export function TableHeader({
                 onColumnClick(dataIdx);
               }}
             >
-              <span className="csv-db-header-icon">{getTypeIcon(col.type)}</span>
-              <span className="csv-db-header-name">{col.name}</span>
+              <div className="csv-db-header-content">
+                <span className="csv-db-header-icon">{getTypeIcon(col.type)}</span>
+                <span className="csv-db-header-name">{col.name}</span>
+              </div>
               <div
                 className="csv-db-resize-handle"
                 onMouseDown={(e) => onResizeStart(displayIdx, e)}

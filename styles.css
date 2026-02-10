@@ -36,7 +36,11 @@
   white-space: nowrap;
   user-select: none;
   position: relative;
+}
+
+.csv-db-header-content {
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 body:not(.csv-db-dragging) .csv-db-header-cell:hover {
@@ -46,7 +50,7 @@ body:not(.csv-db-dragging) .csv-db-header-cell:hover {
 /* Resize handle */
 .csv-db-resize-handle {
   position: absolute;
-  right: 0;
+  right: -2px;
   top: 0;
   width: 4px;
   height: 100%;
@@ -55,7 +59,7 @@ body:not(.csv-db-dragging) .csv-db-header-cell:hover {
 }
 
 body:not(.csv-db-dragging) .csv-db-resize-handle:hover,
-.csv-db-resizing .csv-db-resize-handle {
+.csv-db-resize-handle.csv-db-resize-active {
   background: var(--interactive-accent);
 }
 

@@ -23,7 +23,9 @@ export function useColumnResize({ onResizeEnd }: UseColumnResizeOptions) {
       const startX = e.clientX;
       const startWidth = parseInt(colEl.style.width, 10) || 180;
 
+      const handle = e.currentTarget as HTMLElement;
       document.body.classList.add("csv-db-resizing");
+      handle.classList.add("csv-db-resize-active");
 
       const onMove = (ev: MouseEvent) => {
         const delta = ev.clientX - startX;
@@ -35,6 +37,7 @@ export function useColumnResize({ onResizeEnd }: UseColumnResizeOptions) {
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
         document.body.classList.remove("csv-db-resizing");
+        handle.classList.remove("csv-db-resize-active");
 
         justResizedRef.current = true;
 
