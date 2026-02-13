@@ -10,9 +10,10 @@ interface CellProps {
   onChange: (value: string) => void;
   onAddOption: (option: SelectOption) => void;
   onUpdateOption: (oldValue: string, newOption: SelectOption | null) => void;
+  onRemoveOptionDef: (value: string) => void;
 }
 
-export function Cell({ value, column, onChange, onAddOption, onUpdateOption }: CellProps) {
+export function Cell({ value, column, onChange, onAddOption, onUpdateOption, onRemoveOptionDef }: CellProps) {
   if (column.type === "checkbox") {
     return (
       <td className={`csv-db-cell${column.wrapContent ? " csv-db-cell-wrap" : ""}`}>
@@ -29,6 +30,7 @@ export function Cell({ value, column, onChange, onAddOption, onUpdateOption }: C
         onChange={onChange}
         onAddOption={onAddOption}
         onUpdateOption={onUpdateOption}
+        onRemoveOptionDef={onRemoveOptionDef}
       />
     );
   }
@@ -41,6 +43,7 @@ export function Cell({ value, column, onChange, onAddOption, onUpdateOption }: C
         onChange={onChange}
         onAddOption={onAddOption}
         onUpdateOption={onUpdateOption}
+        onRemoveOptionDef={onRemoveOptionDef}
       />
     );
   }

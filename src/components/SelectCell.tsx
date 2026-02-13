@@ -9,9 +9,10 @@ interface SelectCellProps {
   onChange: (value: string) => void;
   onAddOption: (option: SelectOption) => void;
   onUpdateOption: (oldValue: string, newOption: SelectOption | null) => void;
+  onRemoveOptionDef: (value: string) => void;
 }
 
-export function SelectCell({ value, column, onChange, onAddOption, onUpdateOption }: SelectCellProps) {
+export function SelectCell({ value, column, onChange, onAddOption, onUpdateOption, onRemoveOptionDef }: SelectCellProps) {
   const [open, setOpen] = useState(false);
   const tdRef = useRef<HTMLTableCellElement>(null);
 
@@ -41,6 +42,7 @@ export function SelectCell({ value, column, onChange, onAddOption, onUpdateOptio
           onSelect={handleSelect}
           onCreateOption={onAddOption}
           onUpdateOption={onUpdateOption}
+          onRemoveOptionDef={onRemoveOptionDef}
           onClose={() => setOpen(false)}
         />
       )}

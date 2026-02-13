@@ -7,6 +7,7 @@ import { NewRowButton } from "./NewRowButton";
 import { ColumnModalWrapper } from "./ColumnModal";
 import { useColumnResize } from "../hooks/useColumnResize";
 import { useColumnDrag } from "../hooks/useColumnDrag";
+import { AppContext } from "../AppContext";
 
 type Action =
   | { type: "SET_MODEL"; model: DatabaseModel; fromExternal?: boolean }
@@ -19,6 +20,7 @@ type Action =
   | { type: "SET_COLUMN_WIDTH"; colIdx: number; width: number }
   | { type: "ADD_SELECT_OPTION"; colIdx: number; option: SelectOption }
   | { type: "UPDATE_SELECT_OPTION"; colIdx: number; oldValue: string; newOption: SelectOption | null }
+  | { type: "REMOVE_OPTION_DEF"; colIdx: number; value: string }
   | { type: "REORDER_COLUMN"; dataIdx1: number; dataIdx2: number };
 
 function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
@@ -82,6 +84,14 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
           delete updated.options;
         }
         return updated;
+      });
+      return { ...state, columns };
+    }
+
+    case "REMOVE_OPTION_DEF": {
+      const columns = state.columns.map((col, i) => {
+        if (i !== action.colIdx) return col;
+        return { ...col, options: (col.options || []).filter((o) => o.value !== action.value) };
       });
       return { ...state, columns };
     }
@@ -265,6 +275,10 @@ export function DatabaseTable({
     dispatch({ type: "UPDATE_SELECT_OPTION", colIdx, oldValue, newOption });
   }, []);
 
+  const handleRemoveOptionDef = useCallback((colIdx: number, value: string) => {
+    dispatch({ type: "REMOVE_OPTION_DEF", colIdx, value });
+  }, []);
+
   const handleColumnClick = useCallback(
     (dataIdx: number) => {
       const col = model.columns[dataIdx];
@@ -276,6 +290,13 @@ export function DatabaseTable({
         },
         () => {
           dispatch({ type: "DELETE_COLUMN", colIdx: dataIdx });
+        },
+        (value, removeData) => {
+          if (removeData) {
+            dispatch({ type: "UPDATE_SELECT_OPTION", colIdx: dataIdx, oldValue: value, newOption: null });
+          } else {
+            dispatch({ type: "REMOVE_OPTION_DEF", colIdx: dataIdx, value });
+          }
         }
       );
       modal.open();
@@ -291,38 +312,41 @@ export function DatabaseTable({
   totalWidth += 32; // add-column button width
 
   return (
-    <div className="csv-db-wrapper">
-      <table
-        className="csv-db-table"
-        ref={tableRef}
-        style={{ width: `${totalWidth}px` }}
-      >
-        <colgroup ref={colGroupRef}>
-          {displayColumns.map(({ col }, i) => (
-            <col key={i} style={{ width: `${col.width ?? 180}px` }} />
-          ))}
-          <col style={{ width: "32px" }} />
-        </colgroup>
-        <TableHeader
-          displayColumns={displayColumns}
-          onResizeStart={onResizeStart}
-          consumeJustResized={consumeJustResized}
-          onAddColumn={handleAddColumn}
-          onColumnClick={handleColumnClick}
-          onDragStart={onDragStart}
-          consumeJustDragged={consumeJustDragged}
-          dragState={dragState}
-        />
-        <TableBody
-          rows={model.rows}
-          displayColumns={displayColumns}
-          onSetCell={handleSetCell}
-          onDeleteRow={handleDeleteRow}
-          onAddSelectOption={handleAddSelectOption}
-          onUpdateSelectOption={handleUpdateSelectOption}
-        />
-      </table>
-      <NewRowButton onAddRow={handleAddRow} />
-    </div>
+    <AppContext.Provider value={app}>
+      <div className="csv-db-wrapper">
+        <table
+          className="csv-db-table"
+          ref={tableRef}
+          style={{ width: `${totalWidth}px` }}
+        >
+          <colgroup ref={colGroupRef}>
+            {displayColumns.map(({ col }, i) => (
+              <col key={i} style={{ width: `${col.width ?? 180}px` }} />
+            ))}
+            <col style={{ width: "32px" }} />
+          </colgroup>
+          <TableHeader
+            displayColumns={displayColumns}
+            onResizeStart={onResizeStart}
+            consumeJustResized={consumeJustResized}
+            onAddColumn={handleAddColumn}
+            onColumnClick={handleColumnClick}
+            onDragStart={onDragStart}
+            consumeJustDragged={consumeJustDragged}
+            dragState={dragState}
+          />
+          <TableBody
+            rows={model.rows}
+            displayColumns={displayColumns}
+            onSetCell={handleSetCell}
+            onDeleteRow={handleDeleteRow}
+            onAddSelectOption={handleAddSelectOption}
+            onUpdateSelectOption={handleUpdateSelectOption}
+            onRemoveOptionDef={handleRemoveOptionDef}
+          />
+        </table>
+        <NewRowButton onAddRow={handleAddRow} />
+      </div>
+    </AppContext.Provider>
   );
 }

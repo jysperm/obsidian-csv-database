@@ -13,6 +13,7 @@ interface SelectDropdownProps {
   onSelect: (value: string) => void;
   onCreateOption: (option: SelectOption) => void;
   onUpdateOption: (oldValue: string, newOption: SelectOption | null) => void;
+  onRemoveOptionDef: (value: string) => void;
   onClose: () => void;
 }
 
@@ -23,6 +24,7 @@ export function SelectDropdown({
   onSelect,
   onCreateOption,
   onUpdateOption,
+  onRemoveOptionDef,
   onClose,
 }: SelectDropdownProps) {
   const [search, setSearch] = useState("");
@@ -82,9 +84,10 @@ export function SelectDropdown({
       ref={dropdownRef}
       className="csv-db-dropdown"
       style={{
-        top: `${anchorRect.bottom + 2}px`,
+        // Align with the cell's top edge so the input area overlays the cell being edited
+        top: `${anchorRect.top}px`,
         left: `${anchorRect.left}px`,
-        minWidth: `${anchorRect.width}px`,
+        width: `${anchorRect.width}px`,
       }}
     >
       <div className="csv-db-dropdown-input-area" onClick={() => {
@@ -142,7 +145,9 @@ export function SelectDropdown({
           anchorRect={editAnchorRect}
           panelRef={popoverRef}
           onUpdate={handleUpdateOption}
+          onRemoveOptionDef={onRemoveOptionDef}
           onClose={handleEditClose}
+          onCloseDropdown={onClose}
         />
       )}
     </div>,

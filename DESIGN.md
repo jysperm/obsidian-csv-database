@@ -62,6 +62,22 @@ On parse, if a column has no `columnIndex` in its JSON (e.g. files created befor
 
 Drag interaction is handled by `useColumnDrag` hook. Mousedown on a header cell + 5px drag threshold enters drag mode. Columns swap in real-time as the cursor crosses the current column's boundary, with a 150ms CSS transform animation (slide) before each data commit. A direction lock prevents jitter when columns have different widths. `flushSync` ensures no visual flash between clearing transforms and committing the React state update.
 
+### Wrap Content
+
+Each column has an optional `wrapContent` flag. When enabled, cell content wraps to multiple lines and rows auto-expand in height. When disabled (default), content is clipped at the cell boundary (`text-overflow: clip`).
+
+Wrap cells use adjusted padding (`4px` vertical vs the default `6px`) with `margin-top/bottom: 2px` on tags, so that a single-line wrap cell still matches the standard `32px` row height. Multi-line rows get `4px` vertical gap between tag lines. All cells use `vertical-align: top` so content aligns to the top when other cells in the same row cause it to expand.
+
+### Deleting Columns and Options
+
+Deleting a column shows a confirmation modal explaining the column and all its data will be permanently removed.
+
+Deleting a select/multiselect option (from the column edit modal or from the cell dropdown's option edit popover) shows a modal with two choices:
+- **Delete from all rows**: removes the option definition and clears the value from all cells that reference it (select → empty, multiselect → removes the value from the pipe-separated list). Dispatches `UPDATE_SELECT_OPTION` with `newOption: null`.
+- **Remove option only**: removes the option definition but preserves existing cell data. Orphaned values display as gray tags and can still be removed by users in the cell editor. Dispatches `REMOVE_OPTION_DEF`.
+
+Both actions take effect immediately (not deferred to the column modal's Save button).
+
 ## UI/UX Specification
 
 ### Color Palette
@@ -124,3 +140,13 @@ Default (no color): same as `gray`.
 - Bottom row: "+ New" button, full width, muted text
 - Right side of header: "+" button, `32x32px`, for adding columns
 - Checkbox: `14x14px`, `border-radius: 2px`, checked state is `#2383E2` background with white checkmark
+
+### Column Edit Modal
+
+Clicking a column header opens a modal with: Name input, Type selector, Wrap content checkbox, and (for select/multiselect) an options editor. Options editor rows show a text input, a color swatch button (opens a portal-based color picker dropdown), and a delete button.
+
+Button layout: Delete column (left, red on hover) and Save (right, accent color). Delete column requires confirmation via a secondary modal.
+
+### Popover Positioning
+
+All portal-based popovers (select/multiselect dropdown, option edit panel, color picker) check viewport boundaries before rendering. The option edit panel flips from right to left of its anchor when there is insufficient horizontal space, and shifts upward when there is insufficient vertical space.

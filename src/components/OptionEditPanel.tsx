@@ -1,8 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { SelectOption, TagColor } from "../types";
 import { TAG_COLOR_OPTIONS, TAG_COLORS } from "../constants";
 import { useClickOutside } from "../hooks/useClickOutside";
+import { useApp } from "../AppContext";
+import { DeleteOptionModal } from "./ColumnModal";
 
 const COLOR_LABELS: Record<TagColor, string> = {
   gray: "Gray",
@@ -21,10 +23,13 @@ interface OptionEditPanelProps {
   anchorRect: DOMRect;
   panelRef: React.RefObject<HTMLDivElement | null>;
   onUpdate: (oldValue: string, newOption: SelectOption | null) => void;
+  onRemoveOptionDef: (value: string) => void;
   onClose: () => void;
+  onCloseDropdown: () => void;
 }
 
-export function OptionEditPanel({ option, anchorRect, panelRef, onUpdate, onClose }: OptionEditPanelProps) {
+export function OptionEditPanel({ option, anchorRect, panelRef, onUpdate, onRemoveOptionDef, onClose, onCloseDropdown }: OptionEditPanelProps) {
+  const app = useApp();
   const [name, setName] = useState(option.value);
   const [color, setColor] = useState<TagColor>(option.color || "gray");
 
@@ -33,6 +38,24 @@ export function OptionEditPanel({ option, anchorRect, panelRef, onUpdate, onClos
   }, [onClose]);
 
   useClickOutside([panelRef], handleClose);
+
+  const [pos, setPos] = useState({ top: anchorRect.top, left: anchorRect.right + 6 });
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+    const panelWidth = panel.offsetWidth;
+    const panelHeight = panel.offsetHeight;
+    let left = anchorRect.right + 6;
+    let top = anchorRect.top;
+    if (left + panelWidth > window.innerWidth) {
+      left = anchorRect.left - panelWidth - 6;
+    }
+    if (top + panelHeight > window.innerHeight) {
+      top = window.innerHeight - panelHeight - 8;
+    }
+    setPos({ top, left });
+  }, [anchorRect, panelRef]);
 
   const handleNameBlur = () => {
     const trimmed = name.trim();
@@ -53,8 +76,17 @@ export function OptionEditPanel({ option, anchorRect, panelRef, onUpdate, onClos
   };
 
   const handleDelete = () => {
-    onUpdate(option.value, null);
-    onClose();
+    onCloseDropdown();
+    new DeleteOptionModal(
+      app,
+      option.value || "this option",
+      () => {
+        onUpdate(option.value, null);
+      },
+      () => {
+        onRemoveOptionDef(option.value);
+      }
+    ).open();
   };
 
   return createPortal(
@@ -62,8 +94,8 @@ export function OptionEditPanel({ option, anchorRect, panelRef, onUpdate, onClos
       ref={panelRef}
       className="csv-db-option-edit-popover"
       style={{
-        top: `${anchorRect.top}px`,
-        left: `${anchorRect.right + 6}px`,
+        top: `${pos.top}px`,
+        left: `${pos.left}px`,
       }}
     >
       <div className="csv-db-option-edit-panel">
@@ -76,7 +108,6 @@ export function OptionEditPanel({ option, anchorRect, panelRef, onUpdate, onClos
           autoFocus
         />
         <button className="csv-db-option-edit-delete" onClick={handleDelete}>
-          <span className="csv-db-option-edit-delete-icon">🗑</span>
           Delete
         </button>
         <div className="csv-db-option-edit-separator" />
