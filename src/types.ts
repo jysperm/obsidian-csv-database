@@ -13,6 +13,7 @@ export interface ColumnDef {
   options?: SelectOption[];
   width?: number;
   columnIndex?: number;
+  wrapContent?: boolean;
 }
 
 export interface DisplayColumn {

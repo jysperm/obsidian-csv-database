@@ -6,7 +6,8 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 
 - **Rich column types**: text, number, date, checkbox, select, and multi-select
 - **Inline editing**: click any cell to edit its value directly
-- **Column management**: rename, change type, configure options, resize, and delete columns
+- **Column management**: rename, change type, configure options, resize, reorder, and delete columns
+- **Wrap content**: per-column toggle to wrap cell content to multiple lines
 - **Select & multi-select**: color-coded tags with a dropdown picker
 - **Auto-save**: all changes are saved back to the CSV file immediately
 

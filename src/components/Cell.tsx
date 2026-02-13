@@ -15,7 +15,7 @@ interface CellProps {
 export function Cell({ value, column, onChange, onAddOption, onUpdateOption }: CellProps) {
   if (column.type === "checkbox") {
     return (
-      <td className="csv-db-cell">
+      <td className={`csv-db-cell${column.wrapContent ? " csv-db-cell-wrap" : ""}`}>
         <CheckboxCell value={value} onChange={onChange} />
       </td>
     );

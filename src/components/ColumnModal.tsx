@@ -7,7 +7,7 @@ import { COLUMN_TYPES, TAG_COLOR_OPTIONS } from "../constants";
 
 interface ColumnModalContentProps {
   column: ColumnDef;
-  onSave: (name: string, type: ColumnType, options: SelectOption[]) => void;
+  onSave: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean) => void;
   onDelete: () => void;
 }
 
@@ -17,9 +17,10 @@ function ColumnModalContent({ column, onSave, onDelete }: ColumnModalContentProp
   const [options, setOptions] = useState<SelectOption[]>(
     column.options ? column.options.map((o) => ({ ...o })) : []
   );
+  const [wrapContent, setWrapContent] = useState(column.wrapContent ?? false);
 
   const handleSave = () => {
-    onSave(name, type, options);
+    onSave(name, type, options, wrapContent);
   };
 
   const handleDelete = () => {
@@ -70,6 +71,17 @@ function ColumnModalContent({ column, onSave, onDelete }: ColumnModalContentProp
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="csv-db-modal-field csv-db-modal-checkbox-field">
+        <label className="csv-db-modal-checkbox-label">
+          <input
+            type="checkbox"
+            checked={wrapContent}
+            onChange={(e) => setWrapContent(e.target.checked)}
+          />
+          Wrap content
+        </label>
       </div>
 
       {(type === "select" || type === "multiselect") && (
@@ -124,14 +136,14 @@ function ColumnModalContent({ column, onSave, onDelete }: ColumnModalContentProp
 
 export class ColumnModalWrapper extends Modal {
   private column: ColumnDef;
-  private onSaveCallback: (name: string, type: ColumnType, options: SelectOption[]) => void;
+  private onSaveCallback: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean) => void;
   private onDeleteCallback: () => void;
   private reactRoot: Root | null = null;
 
   constructor(
     app: App,
     column: ColumnDef,
-    onSave: (name: string, type: ColumnType, options: SelectOption[]) => void,
+    onSave: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean) => void,
     onDelete: () => void
   ) {
     super(app);
@@ -146,8 +158,8 @@ export class ColumnModalWrapper extends Modal {
     this.reactRoot.render(
       <ColumnModalContent
         column={this.column}
-        onSave={(name, type, options) => {
-          this.onSaveCallback(name, type, options);
+        onSave={(name, type, options, wrapContent) => {
+          this.onSaveCallback(name, type, options, wrapContent);
           this.close();
         }}
         onDelete={() => {

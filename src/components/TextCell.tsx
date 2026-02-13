@@ -52,7 +52,7 @@ export function TextCell({ value, column, onChange }: TextCellProps) {
 
   if (editing) {
     return (
-      <td className="csv-db-cell csv-db-cell-editing" onClick={(e) => e.stopPropagation()}>
+      <td className={`csv-db-cell csv-db-cell-editing${column.wrapContent ? " csv-db-cell-wrap" : ""}`} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           className="csv-db-cell-input"
@@ -67,7 +67,7 @@ export function TextCell({ value, column, onChange }: TextCellProps) {
   }
 
   return (
-    <td className="csv-db-cell" onClick={handleClick}>
+    <td className={`csv-db-cell${column.wrapContent ? " csv-db-cell-wrap" : ""}`} onClick={handleClick}>
       {value}
     </td>
   );

@@ -19,6 +19,7 @@ interface ColumnDef {
   options?: Array<{ value: string; color?: string }>;
   width?: number;         // column width in pixels, default 180
   columnIndex?: number;   // display order, defaults to positional index
+  wrapContent?: boolean;  // wrap cell content to multiple lines, default false
 }
 ```
 

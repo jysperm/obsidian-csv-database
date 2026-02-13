@@ -28,7 +28,7 @@ export function MultiSelectCell({ value, column, onChange, onAddOption, onUpdate
   };
 
   return (
-    <td className="csv-db-cell" onClick={handleClick} ref={tdRef}>
+    <td className={`csv-db-cell${column.wrapContent ? " csv-db-cell-wrap" : ""}`} onClick={handleClick} ref={tdRef}>
       {values.map((v) => {
         const option = column.options?.find((o) => o.value === v);
         return <Tag key={v} value={v} color={option?.color || "gray"} />;

@@ -140,10 +140,19 @@ body.csv-db-dragging {
   color: var(--text-normal);
   line-height: 1.5;
   cursor: pointer;
-  vertical-align: middle;
+  vertical-align: top;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
+}
+
+.csv-db-cell-wrap {
+  white-space: normal;
+  height: auto;
+}
+
+.csv-db-cell-wrap .csv-db-tag {
+  margin-bottom: 4px;
 }
 
 .csv-db-cell-spacer {
@@ -535,6 +544,19 @@ body.csv-db-dragging {
 
 .csv-db-modal-select:focus {
   border-color: var(--interactive-accent);
+}
+
+.csv-db-modal-checkbox-field {
+  margin-bottom: 16px;
+}
+
+.csv-db-modal-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-normal);
+  cursor: pointer;
 }
 
 /* Options editor in modal */

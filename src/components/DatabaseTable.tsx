@@ -15,7 +15,7 @@ type Action =
   | { type: "DELETE_ROW"; rowIdx: number }
   | { type: "ADD_COLUMN"; column: ColumnDef }
   | { type: "DELETE_COLUMN"; colIdx: number }
-  | { type: "UPDATE_COLUMN"; colIdx: number; name: string; colType: ColumnType; options: SelectOption[] }
+  | { type: "UPDATE_COLUMN"; colIdx: number; name: string; colType: ColumnType; options: SelectOption[]; wrapContent: boolean }
   | { type: "SET_COLUMN_WIDTH"; colIdx: number; width: number }
   | { type: "ADD_SELECT_OPTION"; colIdx: number; option: SelectOption }
   | { type: "UPDATE_SELECT_OPTION"; colIdx: number; oldValue: string; newOption: SelectOption | null }
@@ -74,6 +74,7 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
           ...col,
           name: action.name || "Untitled",
           type: action.colType,
+          wrapContent: action.wrapContent || undefined,
         };
         if (action.colType === "select" || action.colType === "multiselect") {
           updated.options = action.options.filter((o) => o.value.trim() !== "");
@@ -270,8 +271,8 @@ export function DatabaseTable({
       const modal = new ColumnModalWrapper(
         app,
         col,
-        (name, colType, options) => {
-          dispatch({ type: "UPDATE_COLUMN", colIdx: dataIdx, name, colType, options });
+        (name, colType, options, wrapContent) => {
+          dispatch({ type: "UPDATE_COLUMN", colIdx: dataIdx, name, colType, options, wrapContent });
         },
         () => {
           dispatch({ type: "DELETE_COLUMN", colIdx: dataIdx });

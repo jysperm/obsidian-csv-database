@@ -29,7 +29,7 @@ export function SelectCell({ value, column, onChange, onAddOption, onUpdateOptio
   const option = column.options?.find((o) => o.value === value);
 
   return (
-    <td className="csv-db-cell" onClick={handleClick} ref={tdRef}>
+    <td className={`csv-db-cell${column.wrapContent ? " csv-db-cell-wrap" : ""}`} onClick={handleClick} ref={tdRef}>
       {value && (
         <Tag value={value} color={option?.color || "gray"} />
       )}
