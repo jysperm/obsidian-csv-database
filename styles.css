@@ -1,5 +1,8 @@
 .csv-database-container {
   padding: 0;
+}
+
+.csv-db-scroll-area {
   overflow-x: auto;
 }
 
@@ -739,4 +742,335 @@ body.csv-db-dragging {
   font-size: 12px;
   color: var(--interactive-accent);
   flex-shrink: 0;
+}
+
+/* ========== View Bar (combined row: tabs left, toolbar right) ========== */
+.csv-db-viewbar {
+  display: flex;
+  align-items: stretch;
+  padding: 0 8px;
+  min-height: 38px;
+  margin-bottom: 4px;
+}
+
+.csv-db-viewbar-tabs {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  gap: 2px;
+}
+
+.csv-db-viewbar-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+}
+
+.csv-db-viewbar-tab:hover {
+  color: var(--text-normal);
+}
+
+.csv-db-viewbar-tab-active {
+  color: var(--text-normal);
+  font-weight: 600;
+}
+
+.csv-db-viewbar-name {
+  font-size: 14px;
+  padding: 0 4px 8px;
+  border-bottom: 2px solid transparent;
+}
+
+.csv-db-viewbar-tab-active .csv-db-viewbar-name {
+  border-bottom-color: var(--text-normal);
+}
+
+
+/* ========== Toolbar (icon buttons, right side of view bar) ========== */
+.csv-db-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  position: relative;
+  padding-bottom: 2px;
+}
+
+.csv-db-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.csv-db-toolbar-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--interactive-accent);
+}
+
+.csv-db-toolbar-btn-active {
+  color: var(--interactive-accent);
+}
+
+.csv-db-toolbar-btn-active:hover {
+  color: var(--interactive-accent);
+}
+
+/* ========== View Menu ========== */
+.csv-db-view-menu {
+  min-width: 180px;
+  max-width: 240px;
+  padding: 4px 0;
+}
+
+.csv-db-view-menu-item {
+  padding: 6px 12px;
+  font-size: 14px;
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+.csv-db-view-menu-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.csv-db-view-menu-item-danger {
+  color: #E03E3E;
+}
+
+/* ========== Popover (shared) ========== */
+.csv-db-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 100;
+  background: var(--background-primary);
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(15,15,15,0.05),
+    0 3px 6px rgba(15,15,15,0.1),
+    0 9px 24px rgba(15,15,15,0.2);
+  min-width: 300px;
+  max-width: 500px;
+  padding: 8px;
+}
+
+.csv-db-popover-empty {
+  padding: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.csv-db-popover-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--background-modifier-border);
+  margin-top: 4px;
+}
+
+.csv-db-popover-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+
+.csv-db-popover-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.csv-db-popover-btn-danger {
+  color: #E03E3E;
+}
+
+.csv-db-popover-btn-danger:hover {
+  background: #E03E3E;
+  color: white;
+}
+
+.csv-db-popover-select {
+  padding: 3px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 3px;
+  font-size: 13px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+  min-width: 80px;
+}
+
+.csv-db-popover-select:focus {
+  border-color: var(--interactive-accent);
+}
+
+.csv-db-popover-select-direction {
+  min-width: 100px;
+}
+
+.csv-db-popover-input {
+  padding: 3px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 3px;
+  font-size: 13px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  outline: none;
+  flex: 1;
+  min-width: 60px;
+}
+
+.csv-db-popover-input:focus {
+  border-color: var(--interactive-accent);
+}
+
+.csv-db-popover-remove {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.csv-db-popover-remove:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+/* ========== Sort Editor ========== */
+.csv-db-sort-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.csv-db-sort-rule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ========== Filter Editor ========== */
+.csv-db-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.csv-db-filter-rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.csv-db-filter-connector {
+  font-size: 13px;
+  color: var(--text-muted);
+  min-width: 40px;
+  padding-top: 4px;
+}
+
+.csv-db-filter-value-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.csv-db-filter-option-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+.csv-db-filter-option-label input[type="checkbox"] {
+  margin: 0;
+}
+
+/* ========== Column Visibility Editor ========== */
+.csv-db-visibility-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.csv-db-visibility-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+.csv-db-visibility-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.csv-db-visibility-icon {
+  font-size: 12px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.csv-db-visibility-name {
+  flex: 1;
+  color: var(--text-normal);
+}
+
+.csv-db-visibility-toggle {
+  width: 28px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--background-modifier-border);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.csv-db-visibility-toggle-on {
+  background: var(--interactive-accent);
+}
+
+.csv-db-visibility-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  transition: left 0.15s ease;
+}
+
+.csv-db-visibility-toggle-on .csv-db-visibility-toggle-knob {
+  left: 14px;
 }

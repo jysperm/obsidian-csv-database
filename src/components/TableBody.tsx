@@ -2,7 +2,7 @@ import { DisplayColumn, SelectOption } from "../types";
 import { TableRow } from "./TableRow";
 
 interface TableBodyProps {
-  rows: string[][];
+  rows: Array<{ row: string[]; originalIndex: number }>;
   displayColumns: DisplayColumn[];
   onSetCell: (rowIdx: number, colIdx: number, value: string) => void;
   onDeleteRow: (rowIdx: number) => void;
@@ -22,10 +22,10 @@ export function TableBody({
 }: TableBodyProps) {
   return (
     <tbody>
-      {rows.map((row, rowIdx) => (
+      {rows.map(({ row, originalIndex }) => (
         <TableRow
-          key={rowIdx}
-          rowIdx={rowIdx}
+          key={originalIndex}
+          rowIdx={originalIndex}
           row={row}
           displayColumns={displayColumns}
           onSetCell={onSetCell}

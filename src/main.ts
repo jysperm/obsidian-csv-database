@@ -33,7 +33,7 @@ export default class DatabasePlugin extends Plugin {
       { name: "Date", type: "date" },
     ];
 
-    const content = serializeCSV({ columns: defaultColumns, rows: [] });
+    const content = serializeCSV({ columns: defaultColumns, rows: [], views: [{ name: "Default", sorts: [], filters: [], hiddenColumns: [] }] });
 
     const activeFile = this.app.workspace.getActiveFile();
     const folder = activeFile ? activeFile.parent : this.app.vault.getRoot();

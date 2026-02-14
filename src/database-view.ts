@@ -9,7 +9,7 @@ export const VIEW_TYPE_CSV_DATABASE = "csv-database-view";
 
 export class DatabaseView extends TextFileView {
   private reactRoot: Root | null = null;
-  private model: DatabaseModel = { columns: [], rows: [] };
+  private model: DatabaseModel = { columns: [], rows: [], views: [{ name: "Default", sorts: [], filters: [], hiddenColumns: [] }] };
   private pushModel: ((model: DatabaseModel) => void) | null = null;
 
   constructor(leaf: WorkspaceLeaf) {
@@ -43,7 +43,7 @@ export class DatabaseView extends TextFileView {
     this.reactRoot?.unmount();
     this.reactRoot = null;
     this.pushModel = null;
-    this.model = { columns: [], rows: [] };
+    this.model = { columns: [], rows: [], views: [{ name: "Default", sorts: [], filters: [], hiddenColumns: [] }] };
   }
 
   private mountReact(): void {

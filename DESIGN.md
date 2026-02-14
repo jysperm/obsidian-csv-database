@@ -1,13 +1,13 @@
 # CSV Database Plugin
 
-## CSV File Format
+## .csvdb File Format
 
 ### Header Row
 
-The first row of the CSV file contains column definitions. Each cell in the header row is a JSON object:
+The first row contains column definitions. Each cell is a JSON object. The first cell also carries the `views` array (see ViewDef below).
 
 ```
-"{""name"":""Title"",""type"":""text""}","{""name"":""Status"",""type"":""select"",""options"":[{""value"":""Todo"",""color"":""red""},{""value"":""Done"",""color"":""green""}]}"
+"{""name"":""Title"",""type"":""text"",""views"":[...]}","{""name"":""Status"",""type"":""select"",""options"":[{""value"":""Todo"",""color"":""red""},{""value"":""Done"",""color"":""green""}]}"
 ```
 
 ### ColumnDef Schema
@@ -25,6 +25,32 @@ interface ColumnDef {
 
 Color values: `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`.
 
+### ViewDef Schema
+
+The `views` array is stored in the first column's header cell JSON alongside the column definition. On parse, `views` is extracted and stored in `DatabaseModel.views`, then stripped from the `ColumnDef`. On serialize, `views` is merged back into the first column's JSON. If no `views` field is found (backward compatibility), a default view `[{ name: "Default", sorts: [], filters: [], hiddenColumns: [] }]` is created.
+
+```typescript
+interface SortRule {
+  column: string;       // column name
+  direction: "asc" | "desc";
+}
+
+type FilterOperator = "contains" | "does-not-contain" | "is-empty" | "is-not-empty";
+
+interface FilterRule {
+  column: string;       // column name
+  operator: FilterOperator;
+  value: string[];      // for contains/does-not-contain; array of values to match against
+}
+
+interface ViewDef {
+  name: string;
+  sorts: SortRule[];
+  filters: FilterRule[];
+  hiddenColumns: string[];  // column names to hide
+}
+```
+
 ### Data Storage by Type
 
 | Type        | Storage Format                          | Example            |
@@ -36,13 +62,7 @@ Color values: `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `p
 | select      | Option value string                     | `Todo`             |
 | multiselect | Pipe-separated values                   | `Tag1\|Tag2\|Tag3` |
 
-### Example CSV File
-
-```csv
-"{""name"":""Name"",""type"":""text""}","{""name"":""Status"",""type"":""select"",""options"":[{""value"":""Todo"",""color"":""red""},{""value"":""In Progress"",""color"":""yellow""},{""value"":""Done"",""color"":""green""}]}","{""name"":""Due Date"",""type"":""date""}","{""name"":""Priority"",""type"":""number""}","{""name"":""Completed"",""type"":""checkbox""}"
-Task 1,Todo,2024-03-01,1,false
-Task 2,In Progress,2024-03-15,2,true
-```
+See the `examples/` directory for sample `.csvdb` files.
 
 ## Core Architecture
 
@@ -150,3 +170,40 @@ Button layout: Delete column (left, red on hover) and Save (right, accent color)
 ### Popover Positioning
 
 All portal-based popovers (select/multiselect dropdown, option edit panel, color picker) check viewport boundaries before rendering. The option edit panel flips from right to left of its anchor when there is insufficient horizontal space, and shifts upward when there is insufficient vertical space.
+
+## Multi-View System
+
+### Column Name Uniqueness
+
+Column names must be unique since views reference columns by name. When adding a column, if the name already exists, a numeric suffix is appended (e.g. "New Column 2"). When renaming, the same uniqueness check applies.
+
+### Column Rename Propagation
+
+When a column is renamed, all view references are updated: `SortRule.column`, `FilterRule.column`, and `ViewDef.hiddenColumns` entries matching the old name are updated to the new name. When a column is deleted, its references are removed from all views.
+
+### Active View
+
+`activeViewIndex` is stored as component state (not persisted) and always starts at 0. The active view determines which sorts, filters, and hidden columns are applied. Switching views recomputes the visible columns and filtered/sorted rows.
+
+### Filter Logic
+
+- **contains**: for text/number/date, cell includes any value in the array (case-insensitive); for select, cell equals any value; for multiselect, pipe-split cell values intersect with filter values
+- **does-not-contain**: inverse of contains
+- **is-empty**: cell is empty string
+- **is-not-empty**: cell is non-empty
+
+### Sort Logic
+
+Sorts are applied in order (stable sort). For `text`/`select`: locale string compare. For `number`: numeric compare. For `date`: string compare (ISO format sorts correctly). For `checkbox`: "true" > "false". For `multiselect`: compare by joined string.
+
+### UI Layout
+
+The view bar and toolbar share a single horizontal row: view tabs on the left, icon buttons on the right. This row is outside the horizontal scroll area, so it always stays visible even when the table is wider than the viewport.
+
+### UI Components
+
+- **ViewBar**: View tabs on the left side of the bar. Active tab is bold with an underline indicator. Clicking a tab switches the view.
+- **Toolbar**: Icon buttons on the right side of the bar — Filter (funnel), Sort (arrows), Fields (eye), and a "..." menu button. The "..." menu contains: New view, Rename (opens a modal), and Delete "[view name]" (only shown when more than one view exists). Filter and Sort buttons highlight in accent color when active rules exist. Fields button highlights when columns are hidden.
+- **SortEditor**: Popover with a list of sort rules (column dropdown + direction dropdown + remove). "+ Add sort" and "Delete sort" buttons.
+- **FilterEditor**: Popover with a list of filter rules (Where/And connector, column dropdown, operator dropdown, value input, remove). Value input adapts to column type (text input for text/number/date, checkbox options for select/multiselect, hidden for is-empty/is-not-empty).
+- **ColumnVisibilityEditor**: Popover with a list of all columns and toggle switches to show/hide each column in the active view.

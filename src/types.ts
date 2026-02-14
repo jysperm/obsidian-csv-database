@@ -21,7 +21,28 @@ export interface DisplayColumn {
   dataIdx: number;
 }
 
+export interface SortRule {
+  column: string;
+  direction: "asc" | "desc";
+}
+
+export type FilterOperator = "contains" | "does-not-contain" | "is-empty" | "is-not-empty";
+
+export interface FilterRule {
+  column: string;
+  operator: FilterOperator;
+  value: string[];
+}
+
+export interface ViewDef {
+  name: string;
+  sorts: SortRule[];
+  filters: FilterRule[];
+  hiddenColumns: string[];
+}
+
 export interface DatabaseModel {
   columns: ColumnDef[];
   rows: string[][];
+  views: ViewDef[];
 }

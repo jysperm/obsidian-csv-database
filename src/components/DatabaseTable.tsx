@@ -1,9 +1,11 @@
-import { useReducer, useEffect, useRef, useCallback, useMemo } from "react";
+import { useReducer, useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { App } from "obsidian";
-import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn } from "../types";
+import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef } from "../types";
 import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";
 import { NewRowButton } from "./NewRowButton";
+import { ViewBar } from "./ViewBar";
+import { Toolbar } from "./Toolbar";
 import { ColumnModalWrapper } from "./ColumnModal";
 import { useColumnResize } from "../hooks/useColumnResize";
 import { useColumnDrag } from "../hooks/useColumnDrag";
@@ -21,7 +23,41 @@ type Action =
   | { type: "ADD_SELECT_OPTION"; colIdx: number; option: SelectOption }
   | { type: "UPDATE_SELECT_OPTION"; colIdx: number; oldValue: string; newOption: SelectOption | null }
   | { type: "REMOVE_OPTION_DEF"; colIdx: number; value: string }
-  | { type: "REORDER_COLUMN"; dataIdx1: number; dataIdx2: number };
+  | { type: "REORDER_COLUMN"; dataIdx1: number; dataIdx2: number }
+  | { type: "ADD_VIEW" }
+  | { type: "DELETE_VIEW"; viewIndex: number }
+  | { type: "UPDATE_VIEW"; viewIndex: number; view: ViewDef };
+
+function ensureUniqueColumnName(name: string, existingNames: string[]): string {
+  if (!existingNames.includes(name)) return name;
+  let i = 2;
+  while (existingNames.includes(`${name} ${i}`)) i++;
+  return `${name} ${i}`;
+}
+
+function updateViewReferences(views: ViewDef[], oldName: string, newName: string): ViewDef[] {
+  return views.map((view) => ({
+    ...view,
+    sorts: view.sorts.map((s) =>
+      s.column === oldName ? { ...s, column: newName } : s
+    ),
+    filters: view.filters.map((f) =>
+      f.column === oldName ? { ...f, column: newName } : f
+    ),
+    hiddenColumns: view.hiddenColumns.map((c) =>
+      c === oldName ? newName : c
+    ),
+  }));
+}
+
+function removeColumnFromViews(views: ViewDef[], columnName: string): ViewDef[] {
+  return views.map((view) => ({
+    ...view,
+    sorts: view.sorts.filter((s) => s.column !== columnName),
+    filters: view.filters.filter((f) => f.column !== columnName),
+    hiddenColumns: view.hiddenColumns.filter((c) => c !== columnName),
+  }));
+}
 
 function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
   switch (action.type) {
@@ -52,12 +88,15 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
         (max, col) => Math.max(max, col.columnIndex ?? 0),
         -1
       );
-      const columns = [...state.columns, { ...action.column, columnIndex: maxColumnIndex + 1 }];
+      const existingNames = state.columns.map((c) => c.name);
+      const uniqueName = ensureUniqueColumnName(action.column.name, existingNames);
+      const columns = [...state.columns, { ...action.column, name: uniqueName, columnIndex: maxColumnIndex + 1 }];
       const rows = state.rows.map((row) => [...row, ""]);
-      return { columns, rows };
+      return { ...state, columns, rows };
     }
 
     case "DELETE_COLUMN": {
+      const deletedColumnName = state.columns[action.colIdx].name;
       const deletedColumnIndex = state.columns[action.colIdx].columnIndex!;
       const columns = state.columns
         .filter((_, i) => i !== action.colIdx)
@@ -66,15 +105,23 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
           columnIndex: col.columnIndex! > deletedColumnIndex ? col.columnIndex! - 1 : col.columnIndex!,
         }));
       const rows = state.rows.map((row) => row.filter((_, i) => i !== action.colIdx));
-      return { columns, rows };
+      const views = removeColumnFromViews(state.views, deletedColumnName);
+      return { columns, rows, views };
     }
 
     case "UPDATE_COLUMN": {
+      const oldName = state.columns[action.colIdx].name;
+      let newName = action.name || "Untitled";
+
+      // Ensure unique name (excluding the column being updated)
+      const otherNames = state.columns.filter((_, i) => i !== action.colIdx).map((c) => c.name);
+      newName = ensureUniqueColumnName(newName, otherNames);
+
       const columns = state.columns.map((col, i) => {
         if (i !== action.colIdx) return col;
         const updated: ColumnDef = {
           ...col,
-          name: action.name || "Untitled",
+          name: newName,
           type: action.colType,
           wrapContent: action.wrapContent || undefined,
         };
@@ -85,7 +132,13 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
         }
         return updated;
       });
-      return { ...state, columns };
+
+      // Propagate column rename to views
+      const views = oldName !== newName
+        ? updateViewReferences(state.views, oldName, newName)
+        : state.views;
+
+      return { ...state, columns, views };
     }
 
     case "REMOVE_OPTION_DEF": {
@@ -161,7 +214,7 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
         return row.map((c, ci) => (ci === colIdx ? newCell : c));
       });
 
-      return { columns, rows };
+      return { columns, rows, views: state.views };
     }
 
     case "REORDER_COLUMN": {
@@ -176,9 +229,128 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
       return { ...state, columns };
     }
 
+    case "ADD_VIEW": {
+      const existingNames = state.views.map((v) => v.name);
+      let name = "New View";
+      if (existingNames.includes(name)) {
+        let i = 2;
+        while (existingNames.includes(`${name} ${i}`)) i++;
+        name = `${name} ${i}`;
+      }
+      const newView: ViewDef = { name, sorts: [], filters: [], hiddenColumns: [] };
+      return { ...state, views: [...state.views, newView] };
+    }
+
+    case "DELETE_VIEW": {
+      if (state.views.length <= 1) return state;
+      const views = state.views.filter((_, i) => i !== action.viewIndex);
+      return { ...state, views };
+    }
+
+    case "UPDATE_VIEW": {
+      const views = state.views.map((v, i) =>
+        i === action.viewIndex ? action.view : v
+      );
+      return { ...state, views };
+    }
+
     default:
       return state;
   }
+}
+
+function applyFilters(
+  rows: string[][],
+  filters: ViewDef["filters"],
+  columns: ColumnDef[]
+): Array<{ row: string[]; originalIndex: number }> {
+  const indexed = rows.map((row, i) => ({ row, originalIndex: i }));
+  if (filters.length === 0) return indexed;
+
+  return indexed.filter(({ row }) => {
+    return filters.every((filter) => {
+      const colIdx = columns.findIndex((c) => c.name === filter.column);
+      if (colIdx === -1) return true;
+      const cell = row[colIdx] || "";
+      const colType = columns[colIdx].type;
+
+      switch (filter.operator) {
+        case "is-empty":
+          return cell === "";
+        case "is-not-empty":
+          return cell !== "";
+        case "contains": {
+          if (filter.value.length === 0) return true;
+          if (colType === "multiselect") {
+            const cellValues = cell ? cell.split("|") : [];
+            return filter.value.some((v) => cellValues.includes(v));
+          }
+          if (colType === "select") {
+            return filter.value.includes(cell);
+          }
+          // text, number, date
+          return filter.value.some((v) => cell.toLowerCase().includes(v.toLowerCase()));
+        }
+        case "does-not-contain": {
+          if (filter.value.length === 0) return true;
+          if (colType === "multiselect") {
+            const cellValues = cell ? cell.split("|") : [];
+            return !filter.value.some((v) => cellValues.includes(v));
+          }
+          if (colType === "select") {
+            return !filter.value.includes(cell);
+          }
+          return !filter.value.some((v) => cell.toLowerCase().includes(v.toLowerCase()));
+        }
+        default:
+          return true;
+      }
+    });
+  });
+}
+
+function applySorts(
+  rows: Array<{ row: string[]; originalIndex: number }>,
+  sorts: ViewDef["sorts"],
+  columns: ColumnDef[]
+): Array<{ row: string[]; originalIndex: number }> {
+  if (sorts.length === 0) return rows;
+
+  const sorted = [...rows];
+  sorted.sort((a, b) => {
+    for (const sort of sorts) {
+      const colIdx = columns.findIndex((c) => c.name === sort.column);
+      if (colIdx === -1) continue;
+
+      const colType = columns[colIdx].type;
+      const cellA = a.row[colIdx] || "";
+      const cellB = b.row[colIdx] || "";
+
+      let cmp = 0;
+      if (colType === "number") {
+        const numA = parseFloat(cellA);
+        const numB = parseFloat(cellB);
+        if (isNaN(numA) && isNaN(numB)) cmp = 0;
+        else if (isNaN(numA)) cmp = -1;
+        else if (isNaN(numB)) cmp = 1;
+        else cmp = numA - numB;
+      } else if (colType === "checkbox") {
+        const boolA = cellA === "true" ? 1 : 0;
+        const boolB = cellB === "true" ? 1 : 0;
+        cmp = boolA - boolB;
+      } else {
+        // text, select, date, multiselect — locale string compare
+        cmp = cellA.localeCompare(cellB);
+      }
+
+      if (cmp !== 0) {
+        return sort.direction === "desc" ? -cmp : cmp;
+      }
+    }
+    return 0;
+  });
+
+  return sorted;
 }
 
 interface DatabaseTableProps {
@@ -197,15 +369,32 @@ export function DatabaseTable({
   const [model, dispatch] = useReducer(databaseReducer, initialModel);
   const isExternalUpdate = useRef(false);
   const prevModelRef = useRef(model);
+  const [activeViewIndex, setActiveViewIndex] = useState(0);
+
+  // Ensure activeViewIndex is valid
+  const safeViewIndex = (activeViewIndex >= 0 && activeViewIndex < model.views.length) ? activeViewIndex : 0;
+  const activeView = model.views[safeViewIndex];
 
   // Compute display order: columns sorted by columnIndex
-  const displayColumns: DisplayColumn[] = useMemo(
+  const allDisplayColumns: DisplayColumn[] = useMemo(
     () =>
       model.columns
         .map((col, i) => ({ col, dataIdx: i }))
         .sort((a, b) => (a.col.columnIndex ?? 0) - (b.col.columnIndex ?? 0)),
     [model.columns]
   );
+
+  // Filter out hidden columns for the active view
+  const displayColumns: DisplayColumn[] = useMemo(
+    () => allDisplayColumns.filter(({ col }) => !activeView.hiddenColumns.includes(col.name)),
+    [allDisplayColumns, activeView.hiddenColumns]
+  );
+
+  // Compute filtered and sorted rows
+  const filteredSortedRows = useMemo(() => {
+    const filtered = applyFilters(model.rows, activeView.filters, model.columns);
+    return applySorts(filtered, activeView.sorts, model.columns);
+  }, [model.rows, model.columns, activeView.filters, activeView.sorts]);
 
   // Ref for stable access in callbacks
   const displayColumnsRef = useRef(displayColumns);
@@ -304,6 +493,25 @@ export function DatabaseTable({
     [app, model.columns]
   );
 
+  // View management handlers
+  const handleAddView = useCallback(() => {
+    dispatch({ type: "ADD_VIEW" });
+    setActiveViewIndex(model.views.length); // switch to the newly added view
+  }, [model.views.length]);
+
+  const handleDeleteView = useCallback((viewIndex: number) => {
+    dispatch({ type: "DELETE_VIEW", viewIndex });
+    if (viewIndex < activeViewIndex) {
+      setActiveViewIndex(activeViewIndex - 1);
+    } else if (viewIndex === activeViewIndex) {
+      setActiveViewIndex(Math.max(0, viewIndex - 1));
+    }
+  }, [activeViewIndex]);
+
+  const handleUpdateView = useCallback((viewIndex: number, view: ViewDef) => {
+    dispatch({ type: "UPDATE_VIEW", viewIndex, view });
+  }, []);
+
   // Compute total table width from display order
   let totalWidth = 0;
   for (const { col } of displayColumns) {
@@ -313,39 +521,63 @@ export function DatabaseTable({
 
   return (
     <AppContext.Provider value={app}>
-      <div className="csv-db-wrapper">
-        <table
-          className="csv-db-table"
-          ref={tableRef}
-          style={{ width: `${totalWidth}px` }}
-        >
-          <colgroup ref={colGroupRef}>
-            {displayColumns.map(({ col }, i) => (
-              <col key={i} style={{ width: `${col.width ?? 180}px` }} />
-            ))}
-            <col style={{ width: "32px" }} />
-          </colgroup>
-          <TableHeader
-            displayColumns={displayColumns}
-            onResizeStart={onResizeStart}
-            consumeJustResized={consumeJustResized}
-            onAddColumn={handleAddColumn}
-            onColumnClick={handleColumnClick}
-            onDragStart={onDragStart}
-            consumeJustDragged={consumeJustDragged}
-            dragState={dragState}
-          />
-          <TableBody
-            rows={model.rows}
-            displayColumns={displayColumns}
-            onSetCell={handleSetCell}
-            onDeleteRow={handleDeleteRow}
-            onAddSelectOption={handleAddSelectOption}
-            onUpdateSelectOption={handleUpdateSelectOption}
-            onRemoveOptionDef={handleRemoveOptionDef}
-          />
-        </table>
-        <NewRowButton onAddRow={handleAddRow} />
+      <div className="csv-db-viewbar">
+        <ViewBar
+          views={model.views}
+          activeViewIndex={safeViewIndex}
+          onSwitchView={setActiveViewIndex}
+        />
+        <Toolbar
+          activeView={activeView}
+          activeViewIndex={safeViewIndex}
+          views={model.views}
+          columns={model.columns}
+          allDisplayColumns={allDisplayColumns}
+          onUpdateView={handleUpdateView}
+          onAddView={handleAddView}
+          onDeleteView={handleDeleteView}
+          onRenameView={(viewIndex, name) => {
+            const view = model.views[viewIndex];
+            handleUpdateView(viewIndex, { ...view, name });
+          }}
+          app={app}
+        />
+      </div>
+      <div className="csv-db-scroll-area">
+        <div className="csv-db-wrapper">
+          <table
+            className="csv-db-table"
+            ref={tableRef}
+            style={{ width: `${totalWidth}px` }}
+          >
+            <colgroup ref={colGroupRef}>
+              {displayColumns.map(({ col }, i) => (
+                <col key={i} style={{ width: `${col.width ?? 180}px` }} />
+              ))}
+              <col style={{ width: "32px" }} />
+            </colgroup>
+            <TableHeader
+              displayColumns={displayColumns}
+              onResizeStart={onResizeStart}
+              consumeJustResized={consumeJustResized}
+              onAddColumn={handleAddColumn}
+              onColumnClick={handleColumnClick}
+              onDragStart={onDragStart}
+              consumeJustDragged={consumeJustDragged}
+              dragState={dragState}
+            />
+            <TableBody
+              rows={filteredSortedRows}
+              displayColumns={displayColumns}
+              onSetCell={handleSetCell}
+              onDeleteRow={handleDeleteRow}
+              onAddSelectOption={handleAddSelectOption}
+              onUpdateSelectOption={handleUpdateSelectOption}
+              onRemoveOptionDef={handleRemoveOptionDef}
+            />
+          </table>
+          <NewRowButton onAddRow={handleAddRow} />
+        </div>
       </div>
     </AppContext.Provider>
   );
