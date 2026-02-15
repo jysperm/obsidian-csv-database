@@ -16,7 +16,7 @@ const SWAP_ANIMATION_MS = 80;
 
 interface UseColumnDragOptions {
   onReorder: (fromIdx: number, toIdx: number) => void;
-  tableRef: React.RefObject<HTMLTableElement>;
+  tableRef: React.RefObject<HTMLTableElement | null>;
 }
 
 export function useColumnDrag({ onReorder, tableRef }: UseColumnDragOptions) {

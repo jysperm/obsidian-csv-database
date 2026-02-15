@@ -1,6 +1,7 @@
 import { useReducer, useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { App } from "obsidian";
 import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef, SortRule, FilterRule } from "../types";
+import { splitMultiSelect, joinMultiSelect } from "../csv-parser";
 import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";
 import { NewRowButton } from "./NewRowButton";
@@ -108,7 +109,7 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
         }));
       const rows = state.rows.map((row) => row.filter((_, i) => i !== action.colIdx));
       const views = removeColumnFromViews(state.views, deletedColumnName);
-      return { columns, rows, views };
+      return { columns, rows, views, formatVersion: state.formatVersion };
     }
 
     case "UPDATE_COLUMN": {
@@ -199,11 +200,11 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
 
         let newCell: string;
         if (colType === "multiselect") {
-          const parts = cell.split("|");
+          const parts = splitMultiSelect(cell);
           const updated = deleted
             ? parts.filter((p) => p !== oldValue)
             : parts.map((p) => (p === oldValue ? newOption!.value : p));
-          newCell = updated.join("|");
+          newCell = joinMultiSelect(updated);
         } else {
           if (cell === oldValue) {
             newCell = deleted ? "" : newOption!.value;
@@ -216,7 +217,7 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
         return row.map((c, ci) => (ci === colIdx ? newCell : c));
       });
 
-      return { columns, rows, views: state.views };
+      return { columns, rows, views: state.views, formatVersion: state.formatVersion };
     }
 
     case "REORDER_COLUMN": {
@@ -301,7 +302,7 @@ function applyFilters(
         case "contains": {
           if (filter.value.length === 0) return true;
           if (colType === "multiselect") {
-            const cellValues = cell ? cell.split("|") : [];
+            const cellValues = splitMultiSelect(cell);
             return filter.value.some((v) => cellValues.includes(v));
           }
           if (colType === "select") {
@@ -313,7 +314,7 @@ function applyFilters(
         case "does-not-contain": {
           if (filter.value.length === 0) return true;
           if (colType === "multiselect") {
-            const cellValues = cell ? cell.split("|") : [];
+            const cellValues = splitMultiSelect(cell);
             return !filter.value.some((v) => cellValues.includes(v));
           }
           if (colType === "select") {

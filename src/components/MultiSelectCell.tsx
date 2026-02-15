@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { ColumnDef, SelectOption } from "../types";
+import { splitMultiSelect, joinMultiSelect } from "../csv-parser";
 import { Tag } from "./Tag";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
 
@@ -16,7 +17,7 @@ export function MultiSelectCell({ value, column, onChange, onAddOption, onUpdate
   const [open, setOpen] = useState(false);
   const tdRef = useRef<HTMLTableCellElement>(null);
 
-  const values = value ? value.split("|").filter(Boolean) : [];
+  const values = splitMultiSelect(value);
 
   const handleClick = () => {
     if (!open) {
@@ -25,7 +26,7 @@ export function MultiSelectCell({ value, column, onChange, onAddOption, onUpdate
   };
 
   const handleCommit = (newValues: string[]) => {
-    onChange(newValues.join("|"));
+    onChange(joinMultiSelect(newValues));
   };
 
   return (

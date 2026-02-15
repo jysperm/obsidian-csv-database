@@ -45,4 +45,5 @@ export interface DatabaseModel {
   columns: ColumnDef[];
   rows: string[][];
   views: ViewDef[];
+  formatVersion: number;
 }
