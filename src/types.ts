@@ -1,4 +1,4 @@
-export type ColumnType = "text" | "number" | "date" | "checkbox" | "select" | "multiselect";
+export type ColumnType = "text" | "number" | "date" | "checkbox" | "select" | "multiselect" | "note";
 
 export type TagColor = "gray" | "brown" | "orange" | "yellow" | "green" | "blue" | "purple" | "pink" | "red";
 

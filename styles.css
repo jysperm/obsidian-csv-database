@@ -1182,14 +1182,16 @@ body.csv-db-dragging {
 }
 
 .csv-db-fsb-add-filter {
-  background: none;
-  border: none;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
   color: var(--text-muted);
   font-size: 13px;
   cursor: pointer;
   padding: 2px 8px;
   border-radius: 4px;
   white-space: nowrap;
+  line-height: 1.5;
+  box-shadow: none;
 }
 
 .csv-db-fsb-add-filter:hover {
@@ -1355,6 +1357,96 @@ body.csv-db-dragging {
 .csv-db-filter-value-placeholder {
   color: var(--text-faint);
   font-size: 13px;
+}
+
+/* ========== Note Cell ========== */
+.csv-db-note-cell-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin: -2px 0;
+}
+
+.csv-db-note-cell-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.csv-db-note-cell-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.csv-db-cell-wrap .csv-db-note-cell-content {
+  margin: 0;
+}
+
+.csv-db-cell-wrap .csv-db-note-cell-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.csv-db-note-open-btn {
+  flex-shrink: 0;
+  padding: 0 6px;
+  height: 22px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  font-size: 12px;
+  line-height: 22px;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+.csv-db-note-open-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+/* Note dropdown selected item */
+.csv-db-note-selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: var(--background-secondary);
+  font-size: 13px;
+}
+
+.csv-db-note-selected-icon {
+  font-size: 12px;
+}
+
+.csv-db-note-selected-name {
+  color: var(--text-normal);
+}
+
+/* Note dropdown item styles */
+.csv-db-note-item-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.csv-db-note-item-name {
+  flex-shrink: 0;
+}
+
+.csv-db-note-item-path {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Search bar in filter dropdown (no tags, just search) */

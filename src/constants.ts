@@ -19,6 +19,7 @@ export const COLUMN_TYPES: { value: ColumnType; label: string }[] = [
   { value: "checkbox", label: "Checkbox" },
   { value: "select", label: "Select" },
   { value: "multiselect", label: "Multi-select" },
+  { value: "note", label: "Note" },
 ];
 
 export const TAG_COLOR_OPTIONS: TagColor[] = [
@@ -38,6 +39,7 @@ export function getTypeIcon(type: string): string {
     case "checkbox": return "☑";
     case "select": return "▾";
     case "multiselect": return "≡";
+    case "note": return "📄";
     default: return "Aa";
   }
 }

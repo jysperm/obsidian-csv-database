@@ -15,7 +15,7 @@ The first row contains column definitions. Each cell is a JSON object. The first
 ```typescript
 interface ColumnDef {
   name: string;
-  type: "text" | "number" | "date" | "checkbox" | "select" | "multiselect";
+  type: "text" | "number" | "date" | "checkbox" | "select" | "multiselect" | "note";
   options?: Array<{ value: string; color?: string }>;
   width?: number;         // column width in pixels, default 180
   columnIndex?: number;   // display order, defaults to positional index
@@ -61,6 +61,7 @@ interface ViewDef {
 | checkbox    | `true` / `false`                        | `true`             |
 | select      | Option value string                     | `Todo`             |
 | multiselect | Pipe-separated values                   | `Tag1\|Tag2\|Tag3` |
+| note        | Vault-relative file path                | `folder/My Note.md` |
 
 See the `examples/` directory for sample `.csvdb` files.
 
@@ -191,14 +192,14 @@ When a column is renamed, all view references are updated: `SortRule.column`, `F
 
 ### Filter Logic
 
-- **contains**: for text/number/date, cell includes any value in the array (case-insensitive); for select, cell equals any value; for multiselect, pipe-split cell values intersect with filter values
+- **contains**: for text/number/date/note, cell includes any value in the array (case-insensitive); for select, cell equals any value; for multiselect, pipe-split cell values intersect with filter values
 - **does-not-contain**: inverse of contains
 - **is-empty**: cell is empty string
 - **is-not-empty**: cell is non-empty
 
 ### Sort Logic
 
-Sorts are applied in order (stable sort). For `text`/`select`: locale string compare. For `number`: numeric compare. For `date`: string compare (ISO format sorts correctly). For `checkbox`: "true" > "false". For `multiselect`: compare by joined string.
+Sorts are applied in order (stable sort). For `text`/`select`/`note`: locale string compare. For `number`: numeric compare. For `date`: string compare (ISO format sorts correctly). For `checkbox`: "true" > "false". For `multiselect`: compare by joined string.
 
 ### UI Layout
 

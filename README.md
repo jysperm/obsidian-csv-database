@@ -4,7 +4,7 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 
 ## Features
 
-- **Rich column types**: text, number, date, checkbox, select, and multi-select
+- **Rich column types**: text, number, date, checkbox, select, multi-select, and note (links to vault notes)
 - **Inline editing**: click any cell to edit its value directly
 - **Column management**: rename, change type, configure options, resize, reorder, and delete columns
 - **Wrap content**: per-column toggle to wrap cell content to multiple lines
