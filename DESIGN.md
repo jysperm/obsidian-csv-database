@@ -2,19 +2,30 @@
 
 ## .csvdb File Format
 
+### Format Version
+
+The first column's header cell JSON includes a `formatVersion` field. The current format version is `1`. If `formatVersion` is absent, it is treated as version `1`. This field enables future format migrations.
+
 ### Header Row
 
-The first row contains column definitions. Each cell is a JSON object. The first cell also carries the `views` array (see ViewDef below).
+The first row contains column definitions. Each cell is a JSON object. The first cell also carries database-level metadata alongside the column definition (`ColumnDef & DatabaseMetadata`):
+
+```typescript
+interface DatabaseMetadata {
+  formatVersion: number;  // current: 1
+  views: ViewDef[];       // see ViewDef Schema below
+}
+```
 
 ```
-"{""name"":""Title"",""type"":""text"",""views"":[...]}","{""name"":""Status"",""type"":""select"",""options"":[{""value"":""Todo"",""color"":""red""},{""value"":""Done"",""color"":""green""}]}"
+"{""name"":""Title"",""type"":""text"",""formatVersion"":1,""views"":[...]}","{""name"":""Status"",""type"":""select"",""options"":[{""value"":""Todo"",""color"":""red""},{""value"":""Done"",""color"":""green""}]}"
 ```
 
 ### ColumnDef Schema
 
 ```typescript
 interface ColumnDef {
-  name: string;
+  name: string;           // unique across all columns
   type: "text" | "number" | "date" | "checkbox" | "select" | "multiselect" | "note";
   options?: Array<{ value: string; color?: string }>;
   width?: number;         // column width in pixels, default 180
@@ -23,11 +34,11 @@ interface ColumnDef {
 }
 ```
 
-Color values: `gray`, `brown`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`, `red`.
+Color values: see Color Palette below.
 
 ### ViewDef Schema
 
-The `views` array is stored in the first column's header cell JSON alongside the column definition. On parse, `views` is extracted and stored in `DatabaseModel.views`, then stripped from the `ColumnDef`. On serialize, `views` is merged back into the first column's JSON. If no `views` field is found (backward compatibility), a default view `[{ name: "Default", sorts: [], filters: [], hiddenColumns: [] }]` is created.
+The `views` array is stored in the first column's header cell JSON alongside the column definition. If no `views` field is present, a default view is used.
 
 ```typescript
 interface SortRule {
@@ -60,57 +71,95 @@ interface ViewDef {
 | date        | ISO 8601 date                           | `2024-01-15`       |
 | checkbox    | `true` / `false`                        | `true`             |
 | select      | Option value string                     | `Todo`             |
-| multiselect | Pipe-separated values                   | `Tag1\|Tag2\|Tag3` |
+| multiselect | Pipe-separated values (with escaping)   | `Tag1|Tag2|Tag3`   |
 | note        | Vault-relative file path                | `folder/My Note.md` |
+
+### Multiselect Escaping
+
+Multiselect values are separated by `|`. To support literal `|` and `\` characters in option values, a backslash escape mechanism is used:
+
+- `\|` → literal `|`
+- `\\` → literal `\`
+- Unescaped `|` is the value separator
+
+When encoding, each value has `\` escaped to `\\` and `|` escaped to `\|`, then values are joined with `|`. When decoding, the string is scanned character by character; `\` followed by any character produces that literal character; unescaped `|` splits values.
 
 See the `examples/` directory for sample `.csvdb` files.
 
-## Core Architecture
-
-`DatabasePlugin` (`main.ts`) registers the view type and file extension. `DatabaseView` (`database-view.ts`) extends Obsidian's `TextFileView`, bridging file I/O with a React component tree mounted via `createRoot`. `csv-parser.ts` handles CSV parsing/serialization using PapaParse.
-
-The React UI is rooted in `DatabaseTable`, which uses `useReducer` to manage the `DatabaseModel` state. Obsidian pushes data in via `setViewData` → `parseCSV` → dispatch; user edits dispatch actions that flow back via `onModelChange` → `requestSave` → `serializeCSV`.
+## Features
 
 ### Column Display Order
 
-Each `ColumnDef` has a `columnIndex` field that determines its display position. The column and row data order in the CSV file never changes — `rows[r][i]` always corresponds to `columns[i]`. Dragging columns only swaps `columnIndex` values; `serializeCSV` writes columns and rows in their original array order.
-
-`DatabaseTable` computes a `displayColumns: DisplayColumn[]` (sorted by `columnIndex`) for rendering. All UI components receive `displayColumns` and use `dataIdx` (the column's index in the data array) for data operations, and the rendering loop index for DOM operations (resize, drag).
-
-On parse, if a column has no `columnIndex` in its JSON (e.g. files created before this feature), it defaults to the positional index.
+Each column has a `columnIndex` field that determines its display position. The data order in the CSV file is independent of display order. Dragging columns only swaps `columnIndex` values.
 
 ### Column Drag-to-Reorder
 
-Drag interaction is handled by `useColumnDrag` hook. Mousedown on a header cell + 5px drag threshold enters drag mode. Columns swap in real-time as the cursor crosses the current column's boundary, with a 150ms CSS transform animation (slide) before each data commit. A direction lock prevents jitter when columns have different widths. `flushSync` ensures no visual flash between clearing transforms and committing the React state update.
+Mousedown on a header cell + 5px drag threshold enters drag mode. Columns swap in real-time as the cursor crosses the current column's boundary, with a 150ms slide animation.
 
 ### Wrap Content
 
-Each column has an optional `wrapContent` flag. When enabled, cell content wraps to multiple lines and rows auto-expand in height. When disabled (default), content is clipped at the cell boundary (`text-overflow: clip`).
-
-Wrap cells use adjusted padding (`4px` vertical vs the default `6px`) with `margin-top/bottom: 2px` on tags, so that a single-line wrap cell still matches the standard `32px` row height. Multi-line rows get `4px` vertical gap between tag lines. All cells use `vertical-align: top` so content aligns to the top when other cells in the same row cause it to expand.
+Each column has an optional `wrapContent` flag. When enabled, cell content wraps to multiple lines and rows auto-expand in height. When disabled (default), content is clipped at the cell boundary. A single-line wrap cell still matches the standard row height.
 
 ### Deleting Columns and Options
 
 Deleting a column shows a confirmation modal explaining the column and all its data will be permanently removed.
 
-Deleting a select/multiselect option (from the column edit modal or from the cell dropdown's option edit popover) shows a modal with two choices:
-- **Delete from all rows**: removes the option definition and clears the value from all cells that reference it (select → empty, multiselect → removes the value from the pipe-separated list). Dispatches `UPDATE_SELECT_OPTION` with `newOption: null`.
-- **Remove option only**: removes the option definition but preserves existing cell data. Orphaned values display as gray tags and can still be removed by users in the cell editor. Dispatches `REMOVE_OPTION_DEF`.
+Deleting a select/multiselect option shows a modal with two choices:
+- **Delete from all rows**: removes the option definition and clears the value from all cells that reference it (select → empty, multiselect → removes the value from the pipe-separated list).
+- **Remove option only**: removes the option definition but preserves existing cell data. Orphaned values display as gray tags and can still be removed by users in the cell editor.
 
 Both actions take effect immediately (not deferred to the column modal's Save button).
 
-## UI/UX Specification
+### Multi-View System
 
-### Color Palette
+#### Column Name Uniqueness
 
-- Primary text: `#37352F`
-- Muted text: `rgba(55,53,47,0.65)`
-- Light muted text: `rgba(55,53,47,0.5)`
-- Border: `#E9E9E7`
-- Header background: `#F7F6F3`
-- Row hover: `rgba(55,53,47,0.04)`
-- Focus ring: `#2383E2`
-- Checkbox checked: `#2383E2`
+Column names must be unique since views reference columns by name. When adding a column, if the name already exists, a numeric suffix is appended (e.g. "New Column 2"). When renaming, the same uniqueness check applies.
+
+#### Column Rename Propagation
+
+When a column is renamed, all view references are updated: `SortRule.column`, `FilterRule.column`, and `ViewDef.hiddenColumns` entries matching the old name are updated to the new name. When a column is deleted, its references are removed from all views.
+
+#### Active View
+
+The active view always starts at the first view and is not persisted. The active view determines which sorts, filters, and hidden columns are applied. Switching views recomputes the visible columns and filtered/sorted rows.
+
+#### Filter Logic
+
+- **contains**: for text/number/date/note, cell includes any value in the array (case-insensitive); for select, cell equals any value; for multiselect, cell values intersect with filter values
+- **does-not-contain**: inverse of contains
+- **is-empty**: cell is empty string
+- **is-not-empty**: cell is non-empty
+
+#### Sort Logic
+
+Sorts are applied in order (stable sort). For `text`/`select`/`note`: locale string compare. For `number`: numeric compare. For `date`: string compare (ISO format sorts correctly). For `checkbox`: "true" > "false". For `multiselect`: compare by joined string.
+
+### UI Components
+
+The view bar and toolbar share a single horizontal row: view tabs on the left, icon buttons on the right. This row is outside the horizontal scroll area, so it always stays visible even when the table is wider than the viewport.
+
+- **ViewBar**: View tabs on the left side of the bar. Active tab is bold with an underline indicator. Clicking a tab switches the view.
+- **Toolbar**: Icon buttons on the right side of the bar — Filter (funnel), Sort (arrows), Fields (eye), and a "..." menu button. The "..." menu contains: New view, Rename (opens a modal), and Delete "[view name]" (only shown when more than one view exists). Filter and Sort buttons highlight in accent color when saved rules exist. Fields button highlights when columns are hidden. Clicking Sort or Filter toggles the FilterSortBar.
+- **FilterSortBar**: A horizontal bar rendered between the view bar row and the table. Contains sort pill, individual filter pills, "+ Filter" button, and Reset/Save action buttons. Clicking the sort pill opens a SortEditor popover. Clicking a filter pill opens a FilterPillEditor popover to edit that rule. Save is a split button with a dropdown for "Save as new view". Filter pills display operator symbols (`⊇` contains, `⊉` does not contain, `= ∅` is empty, `≠ ∅` is not empty) and render select/multiselect values as colored tags.
+- **SortEditor**: Popover with a list of sort rules (column dropdown + direction dropdown + remove). "+ Add sort" and "Delete sort" buttons.
+- **FilterPillEditor**: Small popover for editing a single filter rule: column dropdown, operator dropdown, value input, and delete button. For select/multiselect columns, the value area shows selected tags with remove buttons; clicking it opens a dropdown listing unselected options.
+- **ColumnVisibilityEditor**: Popover with a list of all columns and toggle switches to show/hide each column in the active view.
+
+### FilterSortBar Draft State
+
+Sort and filter changes are managed as draft state while the bar is open:
+
+- **Bar visibility**: The bar is hidden by default. Clicking the Sort or Filter toolbar button opens it, initializing draft state from the active view's saved sorts/filters. Clicking the button again closes the bar only if there are no unsaved changes.
+- **Draft state**: While the bar is visible, the table uses draft state for live preview. When hidden, it uses saved view state.
+- **Dirty detection**: The bar compares draft state to the saved view to determine if changes exist.
+- **Save**: Commits draft values to the active view and closes bar.
+- **Reset**: Reverts to saved state and closes bar.
+- **Save as new view**: Creates a new view from draft sorts/filters, switches to it, and closes bar.
+- **View switching**: Draft state is preserved per-view. When switching tabs while the bar is open, the current view's draft is saved and the target view's draft is restored (or initialized from saved state). The draft map is cleared on Reset/Save/Save-as-New-View.
+- **Column rename/delete propagation**: When columns are renamed or deleted while the bar is open, draft sorts/filters are updated to reflect the change.
+
+## Color Palette
 
 ### Tag Color Palette (9 Colors)
 
@@ -128,101 +177,28 @@ Both actions take effect immediately (not deferred to the column modal's Save bu
 
 Default (no color): same as `gray`.
 
-### Typography
+## Implementation
 
-- Header cells: `12px`, `500` weight, muted color
-- Body cells: `14px`, `400` weight, primary color
-- Tag labels: `12px`, `400` weight
-- Line height: `1.5`
+`DatabasePlugin` (`main.ts`) registers the view type and file extension. `DatabaseView` (`database-view.ts`) extends Obsidian's `TextFileView`, bridging file I/O with a React component tree mounted via `createRoot`. `csv-parser.ts` handles CSV parsing/serialization using PapaParse.
 
-### Spacing
+The React UI is rooted in `DatabaseTable`, which uses `useReducer` to manage the `DatabaseModel` state. Obsidian pushes data in via `setViewData` → `parseCSV` → dispatch; user edits dispatch actions that flow back via `onModelChange` → `requestSave` → `serializeCSV`.
 
-- Cell padding: `8px`
-- Minimum row height: `32px`
-- Tag padding: `0 6px`
-- Tag border-radius: `3px`
+### Column Display Order
 
-### Interactive States
+`DatabaseTable` computes a `displayColumns: DisplayColumn[]` (sorted by `columnIndex`) for rendering. All UI components receive `displayColumns` and use `dataIdx` (the column's index in the data array) for data operations, and the rendering loop index for DOM operations (resize, drag). The column and row data order in the CSV file never changes — `rows[r][i]` always corresponds to `columns[i]`. `serializeCSV` writes columns and rows in their original array order.
 
-- Row hover: background `rgba(55,53,47,0.04)`
-- Cell edit focus: `2px solid #2383E2` border (inset, replaces normal border)
-- Dropdown shadow (3 layers):
-  ```
-  0 0 0 1px rgba(15,15,15,0.05),
-  0 3px 6px rgba(15,15,15,0.1),
-  0 9px 24px rgba(15,15,15,0.2)
-  ```
+### Column Drag-to-Reorder
 
-### Layout
+Drag interaction is handled by `useColumnDrag` hook. A direction lock prevents jitter when columns have different widths. `flushSync` ensures no visual flash between clearing transforms and committing the React state update.
 
-- Table has no outer border
-- Columns separated by `1px` `#E9E9E7` vertical lines
-- Rows separated by `1px` `#E9E9E7` horizontal lines
-- Bottom row: "+ New" button, full width, muted text
-- Right side of header: "+" button, `32x32px`, for adding columns
-- Checkbox: `14x14px`, `border-radius: 2px`, checked state is `#2383E2` background with white checkmark
+### Wrap Content
 
-### Column Edit Modal
-
-Clicking a column header opens a modal with: Name input, Type selector, Wrap content checkbox, and (for select/multiselect) an options editor. Options editor rows show a text input, a color swatch button (opens a portal-based color picker dropdown), and a delete button.
-
-Button layout: Delete column (left, red on hover) and Save (right, accent color). Delete column requires confirmation via a secondary modal.
-
-### Select/MultiSelect Dropdowns
-
-In all select/multiselect dropdowns (cell editors and filter pill editor), already-selected options are hidden from the option list. Users remove selections via the remove button (✕) on each tag in the input area.
-
-### Popover Positioning
-
-All portal-based popovers (select/multiselect dropdown, option edit panel, color picker) check viewport boundaries before rendering. The option edit panel flips from right to left of its anchor when there is insufficient horizontal space, and shifts upward when there is insufficient vertical space.
-
-## Multi-View System
-
-### Column Name Uniqueness
-
-Column names must be unique since views reference columns by name. When adding a column, if the name already exists, a numeric suffix is appended (e.g. "New Column 2"). When renaming, the same uniqueness check applies.
-
-### Column Rename Propagation
-
-When a column is renamed, all view references are updated: `SortRule.column`, `FilterRule.column`, and `ViewDef.hiddenColumns` entries matching the old name are updated to the new name. When a column is deleted, its references are removed from all views.
-
-### Active View
-
-`activeViewIndex` is stored as component state (not persisted) and always starts at 0. The active view determines which sorts, filters, and hidden columns are applied. Switching views recomputes the visible columns and filtered/sorted rows.
-
-### Filter Logic
-
-- **contains**: for text/number/date/note, cell includes any value in the array (case-insensitive); for select, cell equals any value; for multiselect, pipe-split cell values intersect with filter values
-- **does-not-contain**: inverse of contains
-- **is-empty**: cell is empty string
-- **is-not-empty**: cell is non-empty
-
-### Sort Logic
-
-Sorts are applied in order (stable sort). For `text`/`select`/`note`: locale string compare. For `number`: numeric compare. For `date`: string compare (ISO format sorts correctly). For `checkbox`: "true" > "false". For `multiselect`: compare by joined string.
-
-### UI Layout
-
-The view bar and toolbar share a single horizontal row: view tabs on the left, icon buttons on the right. This row is outside the horizontal scroll area, so it always stays visible even when the table is wider than the viewport.
-
-### UI Components
-
-- **ViewBar**: View tabs on the left side of the bar. Active tab is bold with an underline indicator. Clicking a tab switches the view.
-- **Toolbar**: Icon buttons on the right side of the bar — Filter (funnel), Sort (arrows), Fields (eye), and a "..." menu button. The "..." menu contains: New view, Rename (opens a modal), and Delete "[view name]" (only shown when more than one view exists). Filter and Sort buttons highlight in accent color when saved rules exist. Fields button highlights when columns are hidden. Clicking Sort or Filter toggles the FilterSortBar.
-- **FilterSortBar**: A horizontal bar rendered between the view bar row and the table. Contains sort pill, individual filter pills, "+ Filter" button, and Reset/Save action buttons. Clicking the sort pill opens a `SortEditor` popover. Clicking a filter pill opens a `FilterPillEditor` popover to edit that rule. Save is a split button with a dropdown for "Save as new view". Filter pills display operator symbols (`⊇` contains, `⊉` does not contain, `= ∅` is empty, `≠ ∅` is not empty) and render select/multiselect values as colored Tag components.
-- **SortEditor**: Popover with a list of sort rules (column dropdown + direction dropdown + remove). "+ Add sort" and "Delete sort" buttons.
-- **FilterPillEditor**: Small popover for editing a single filter rule: column dropdown, operator dropdown, value input, and delete button. For select/multiselect columns, the value area shows selected tags with remove buttons; clicking it opens a portal-based dropdown (rendered on `document.body` via `createPortal`) listing unselected options. Outside-click detection spans both the popover and portal dropdown using the `data-csv-db-filter-dropdown` attribute.
-- **ColumnVisibilityEditor**: Popover with a list of all columns and toggle switches to show/hide each column in the active view.
+Wrap cells use adjusted padding (`4px` vertical vs the default `6px`) with `margin-top/bottom: 2px` on tags, so that a single-line wrap cell still matches the standard `32px` row height. Multi-line rows get `4px` vertical gap between tag lines. All cells use `vertical-align: top` so content aligns to the top when other cells in the same row cause it to expand.
 
 ### FilterSortBar Draft State
 
-Sort and filter changes are managed as draft state in `DatabaseTable` while the bar is open:
+`draftSorts` and `draftFilters` are local `useState` in `DatabaseTable`. Dirty detection compares draft state to the saved view via JSON serialization. Draft state is preserved per-view via `draftStateMapRef` (a `Map<number, {sorts, filters}>`).
 
-- **Bar visibility**: The bar is hidden by default. Clicking the Sort or Filter toolbar button opens it, initializing draft state from the active view's saved sorts/filters. Clicking the button again closes the bar only if there are no unsaved changes.
-- **Draft state**: `draftSorts` and `draftFilters` are local `useState` in `DatabaseTable`. When the bar is visible, `filteredSortedRows` uses draft state for live preview. When hidden, it uses saved view state.
-- **Dirty detection**: The bar compares draft state to the saved view via JSON serialization.
-- **Save**: Dispatches `UPDATE_VIEW` with draft values, closes bar.
-- **Reset**: Reverts to saved state, closes bar.
-- **Save as new view**: Dispatches `ADD_VIEW_FROM_DRAFT` with draft sorts/filters, creates a new view, switches to it, closes bar.
-- **View switching**: Draft state is preserved per-view via `draftStateMapRef` (a `Map<number, {sorts, filters}>`). When switching tabs while the bar is open, the current view's draft is saved to the map and the target view's draft is restored (or initialized from saved state). The map is cleared on Reset/Save/Save-as-New-View.
-- **Column rename/delete propagation**: When columns are renamed or deleted while the bar is open, draft sorts/filters are updated to reflect the change.
+### Popover Positioning
+
+All portal-based popovers (select/multiselect dropdown, option edit panel, color picker) check viewport boundaries before rendering. The option edit panel flips from right to left of its anchor when there is insufficient horizontal space, and shifts upward when there is insufficient vertical space. Outside-click detection for FilterPillEditor spans both the popover and portal dropdown using the `data-csv-db-filter-dropdown` attribute.

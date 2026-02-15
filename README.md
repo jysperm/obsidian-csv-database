@@ -1,6 +1,21 @@
 # Obsidian CSV Database
 
-An [Obsidian](https://obsidian.md) plugin that provides an interactive database view for CSV files, supporting multiple column types, inline editing, and more.
+An [Obsidian](https://obsidian.md) plugin that provides an interactive database view backed by CSV files, supporting multiple column types, inline editing, and more.
+
+<p align="center">
+  <img src="screenshots/overall.png" alt="Database view with multiple column types" /><br />
+  <span>Database view with multiple column types</span>
+</p>
+
+<p align="center">
+  <img src="screenshots/views-and-filters.png" width="560" alt="Multiple views with sort and filter" /><br />
+  <span>Multiple views with sort and filter</span>
+</p>
+
+<p align="center">
+  <img src="screenshots/inline-editing.png" width="400" alt="Inline editing with multi-select dropdown" /><br />
+  <span>Inline editing with multi-select dropdown</span>
+</p>
 
 ## Features
 
@@ -13,20 +28,34 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 - **Sort & filter**: sort by multiple columns, filter with contains / does not contain / is empty / is not empty operators
 - **Auto-save**: all changes are saved back to the CSV file immediately
 
+## Installation
+
+1. Open **Settings** → **Community Plugins** → **Browse**
+2. Search for **CSV Database**
+3. Click **Install**, then **Enable**
+
 ## Usage
 
-1. Install the plugin in Obsidian
-2. Use the command palette to create a new database (creates a `.csvdb` file)
-3. Add columns and rows to build your database
+1. Use the command palette (`Ctrl/Cmd + P`) and run **Create new database** to create a `.csvdb` file
+2. Add columns using the **+** button in the header row
+3. Add rows using the **+ New** button at the bottom
 
-The `.csvdb` file is a standard CSV file with column metadata encoded in the header row, so it remains portable and human-readable.
+The `.csvdb` file is a standard CSV file with column metadata encoded in the header row. It remains human-readable and can be opened with any text editor or spreadsheet application.
 
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run dev    # watch mode
 npm run build  # production build
 ```
 
-Copy `main.js`, `styles.css`, and `manifest.json` to your vault's plugin directory (`.obsidian/plugins/csv-database/`) to test locally.
+To test locally, create a symlink from your vault's plugin directory to the project root:
+
+```bash
+ln -s /path/to/obsidian-csv-database /path/to/vault/.obsidian/plugins/csv-database
+```
+
+## License
+
+The majority of this code was written by Claude Code (Opus), but all code has been thoroughly reviewed and tested by a human. I don't really care about licensing, but Obsidian's "Submission requirements for plugins" requires me to pick one, so: [MIT](LICENSE).

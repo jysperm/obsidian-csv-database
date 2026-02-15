@@ -1,8 +1,14 @@
 {
   "name": "obsidian-csv-database",
   "version": "0.1.0",
-  "description": "Advanced database view for CSV files in Obsidian",
+  "description": "Database view for CSV files with rich column types, multiple views, sort & filter",
   "main": "main.js",
+  "license": "MIT",
+  "author": "jysperm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jysperm/obsidian-csv-database.git"
+  },
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production"
