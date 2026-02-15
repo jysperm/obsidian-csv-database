@@ -3,7 +3,7 @@
   "name": "CSV Database",
   "version": "0.1.0",
   "minAppVersion": "0.15.0",
-  "description": "Database view for CSV files with rich column types, multiple views, sort & filter",
+  "description": "Interactive database view backed by CSV files, with rich column types, multiple views, sort & filter.",
   "author": "jysperm",
   "authorUrl": "https://github.com/jysperm",
   "main": "main.js",

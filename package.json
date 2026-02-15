@@ -1,7 +1,7 @@
 {
   "name": "obsidian-csv-database",
   "version": "0.1.0",
-  "description": "Database view for CSV files with rich column types, multiple views, sort & filter",
+  "description": "Interactive database view backed by CSV files, with rich column types, multiple views, sort & filter.",
   "main": "main.js",
   "license": "MIT",
   "author": "jysperm",
