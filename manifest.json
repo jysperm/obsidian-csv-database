@@ -6,6 +6,5 @@
   "description": "Interactive database view backed by CSV files, with rich column types, multiple views, sort & filter.",
   "author": "jysperm",
   "authorUrl": "https://github.com/jysperm",
-  "main": "main.js",
   "isDesktopOnly": false
 }
