@@ -41,7 +41,7 @@ export function SelectDropdown({
 
   const options = column.options || [];
   const lower = search.toLowerCase();
-  const filtered = options.filter((o) => o.value.toLowerCase().includes(lower));
+  const filtered = options.filter((o) => o.value.toLowerCase().includes(lower) && o.value !== currentValue);
   const exactMatch = options.some((o) => o.value.toLowerCase() === lower);
 
   const handleCreate = () => {

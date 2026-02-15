@@ -205,17 +205,19 @@ function ColumnModalContent({ app, column, onSave, onDelete, onRemoveOption }: C
 
       <div className="csv-db-modal-field">
         <label className="csv-db-modal-label">Type</label>
-        <select
-          className="csv-db-modal-select"
-          value={type}
-          onChange={(e) => setType(e.target.value as ColumnType)}
-        >
-          {COLUMN_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+        <div className="csv-db-select-wrapper">
+          <select
+            className="csv-db-modal-select"
+            value={type}
+            onChange={(e) => setType(e.target.value as ColumnType)}
+          >
+            {COLUMN_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="csv-db-modal-field csv-db-modal-checkbox-field">

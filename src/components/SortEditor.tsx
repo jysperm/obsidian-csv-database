@@ -1,14 +1,13 @@
-import { ViewDef, ColumnDef, SortRule } from "../types";
+import { ColumnDef, SortRule } from "../types";
 import { getTypeIcon } from "../constants";
 
 interface SortEditorProps {
-  activeView: ViewDef;
+  sorts: SortRule[];
   columns: ColumnDef[];
   onUpdateSorts: (sorts: SortRule[]) => void;
 }
 
-export function SortEditor({ activeView, columns, onUpdateSorts }: SortEditorProps) {
-  const sorts = activeView.sorts;
+export function SortEditor({ sorts, columns, onUpdateSorts }: SortEditorProps) {
 
   const addSort = () => {
     // Pick first column not already used, or first column
@@ -38,25 +37,29 @@ export function SortEditor({ activeView, columns, onUpdateSorts }: SortEditorPro
         <div className="csv-db-sort-list">
           {sorts.map((sort, i) => (
             <div key={i} className="csv-db-sort-rule">
-              <select
-                className="csv-db-popover-select"
-                value={sort.column}
-                onChange={(e) => updateSort(i, { column: e.target.value })}
-              >
-                {columns.map((col) => (
-                  <option key={col.name} value={col.name}>
-                    {getTypeIcon(col.type)} {col.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="csv-db-popover-select csv-db-popover-select-direction"
-                value={sort.direction}
-                onChange={(e) => updateSort(i, { direction: e.target.value as "asc" | "desc" })}
-              >
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
-              </select>
+              <div className="csv-db-select-wrapper">
+                <select
+                  className="csv-db-popover-select"
+                  value={sort.column}
+                  onChange={(e) => updateSort(i, { column: e.target.value })}
+                >
+                  {columns.map((col) => (
+                    <option key={col.name} value={col.name}>
+                      {getTypeIcon(col.type)} {col.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="csv-db-select-wrapper">
+                <select
+                  className="csv-db-popover-select csv-db-popover-select-direction"
+                  value={sort.direction}
+                  onChange={(e) => updateSort(i, { direction: e.target.value as "asc" | "desc" })}
+                >
+                  <option value="asc">Ascending</option>
+                  <option value="desc">Descending</option>
+                </select>
+              </div>
               <button className="csv-db-popover-remove" onClick={() => removeSort(i)}>✕</button>
             </div>
           ))}

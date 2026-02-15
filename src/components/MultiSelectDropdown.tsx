@@ -41,7 +41,7 @@ export function MultiSelectDropdown({
 
   const options = column.options || [];
   const lower = search.toLowerCase();
-  const filtered = options.filter((o) => o.value.toLowerCase().includes(lower));
+  const filtered = options.filter((o) => o.value.toLowerCase().includes(lower) && !currentValues.includes(o.value));
   const exactMatch = options.some((o) => o.value.toLowerCase() === lower);
 
   const handleAdd = (value: string) => {
@@ -138,29 +138,24 @@ export function MultiSelectDropdown({
             Create <Tag value={search.trim()} color={pickColor(options.length)} />
           </div>
         )}
-        {filtered.map((option) => {
-          const isSelected = currentValues.includes(option.value);
-          return (
-            <div
-              key={option.value}
-              className="csv-db-dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isSelected) {
-                  handleAdd(option.value);
-                }
-              }}
+        {filtered.map((option) => (
+          <div
+            key={option.value}
+            className="csv-db-dropdown-item"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAdd(option.value);
+            }}
+          >
+            <Tag value={option.value} color={option.color || "gray"} />
+            <span
+              className="csv-db-option-more-btn"
+              onClick={(e) => handleMoreClick(e, option)}
             >
-              <Tag value={option.value} color={option.color || "gray"} />
-              <span
-                className="csv-db-option-more-btn"
-                onClick={(e) => handleMoreClick(e, option)}
-              >
-                ···
-              </span>
-            </div>
-          );
-        })}
+              ···
+            </span>
+          </div>
+        ))}
       </div>
       {editingOption && editAnchorRect && (
         <OptionEditPanel

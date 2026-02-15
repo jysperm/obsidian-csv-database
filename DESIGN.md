@@ -167,6 +167,10 @@ Clicking a column header opens a modal with: Name input, Type selector, Wrap con
 
 Button layout: Delete column (left, red on hover) and Save (right, accent color). Delete column requires confirmation via a secondary modal.
 
+### Select/MultiSelect Dropdowns
+
+In all select/multiselect dropdowns (cell editors and filter pill editor), already-selected options are hidden from the option list. Users remove selections via the remove button (✕) on each tag in the input area.
+
 ### Popover Positioning
 
 All portal-based popovers (select/multiselect dropdown, option edit panel, color picker) check viewport boundaries before rendering. The option edit panel flips from right to left of its anchor when there is insufficient horizontal space, and shifts upward when there is insufficient vertical space.
@@ -203,7 +207,21 @@ The view bar and toolbar share a single horizontal row: view tabs on the left, i
 ### UI Components
 
 - **ViewBar**: View tabs on the left side of the bar. Active tab is bold with an underline indicator. Clicking a tab switches the view.
-- **Toolbar**: Icon buttons on the right side of the bar — Filter (funnel), Sort (arrows), Fields (eye), and a "..." menu button. The "..." menu contains: New view, Rename (opens a modal), and Delete "[view name]" (only shown when more than one view exists). Filter and Sort buttons highlight in accent color when active rules exist. Fields button highlights when columns are hidden.
+- **Toolbar**: Icon buttons on the right side of the bar — Filter (funnel), Sort (arrows), Fields (eye), and a "..." menu button. The "..." menu contains: New view, Rename (opens a modal), and Delete "[view name]" (only shown when more than one view exists). Filter and Sort buttons highlight in accent color when saved rules exist. Fields button highlights when columns are hidden. Clicking Sort or Filter toggles the FilterSortBar.
+- **FilterSortBar**: A horizontal bar rendered between the view bar row and the table. Contains sort pill, individual filter pills, "+ Filter" button, and Reset/Save action buttons. Clicking the sort pill opens a `SortEditor` popover. Clicking a filter pill opens a `FilterPillEditor` popover to edit that rule. Save is a split button with a dropdown for "Save as new view". Filter pills display operator symbols (`⊇` contains, `⊉` does not contain, `= ∅` is empty, `≠ ∅` is not empty) and render select/multiselect values as colored Tag components.
 - **SortEditor**: Popover with a list of sort rules (column dropdown + direction dropdown + remove). "+ Add sort" and "Delete sort" buttons.
-- **FilterEditor**: Popover with a list of filter rules (Where/And connector, column dropdown, operator dropdown, value input, remove). Value input adapts to column type (text input for text/number/date, checkbox options for select/multiselect, hidden for is-empty/is-not-empty).
+- **FilterPillEditor**: Small popover for editing a single filter rule: column dropdown, operator dropdown, value input, and delete button. For select/multiselect columns, the value area shows selected tags with remove buttons; clicking it opens a portal-based dropdown (rendered on `document.body` via `createPortal`) listing unselected options. Outside-click detection spans both the popover and portal dropdown using the `data-csv-db-filter-dropdown` attribute.
 - **ColumnVisibilityEditor**: Popover with a list of all columns and toggle switches to show/hide each column in the active view.
+
+### FilterSortBar Draft State
+
+Sort and filter changes are managed as draft state in `DatabaseTable` while the bar is open:
+
+- **Bar visibility**: The bar is hidden by default. Clicking the Sort or Filter toolbar button opens it, initializing draft state from the active view's saved sorts/filters. Clicking the button again closes the bar only if there are no unsaved changes.
+- **Draft state**: `draftSorts` and `draftFilters` are local `useState` in `DatabaseTable`. When the bar is visible, `filteredSortedRows` uses draft state for live preview. When hidden, it uses saved view state.
+- **Dirty detection**: The bar compares draft state to the saved view via JSON serialization.
+- **Save**: Dispatches `UPDATE_VIEW` with draft values, closes bar.
+- **Reset**: Reverts to saved state, closes bar.
+- **Save as new view**: Dispatches `ADD_VIEW_FROM_DRAFT` with draft sorts/filters, creates a new view, switches to it, closes bar.
+- **View switching**: Draft state is preserved per-view via `draftStateMapRef` (a `Map<number, {sorts, filters}>`). When switching tabs while the bar is open, the current view's draft is saved to the map and the target view's draft is restored (or initialized from saved state). The map is cleared on Reset/Save/Save-as-New-View.
+- **Column rename/delete propagation**: When columns are renamed or deleted while the bar is open, draft sorts/filters are updated to reflect the change.

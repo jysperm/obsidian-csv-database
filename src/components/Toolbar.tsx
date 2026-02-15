@@ -2,8 +2,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { App, Modal } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 import { ViewDef, ColumnDef, DisplayColumn } from "../types";
-import { SortEditor } from "./SortEditor";
-import { FilterEditor } from "./FilterEditor";
 import { ColumnVisibilityEditor } from "./ColumnVisibilityEditor";
 
 class RenameViewModal extends Modal {
@@ -83,10 +81,11 @@ interface ToolbarProps {
   onAddView: () => void;
   onDeleteView: (index: number) => void;
   onRenameView: (index: number, name: string) => void;
+  onToggleBar: () => void;
   app: App;
 }
 
-type PopoverType = "sort" | "filter" | "visibility" | "viewMenu" | null;
+type PopoverType = "visibility" | "viewMenu" | null;
 
 export function Toolbar({
   activeView,
@@ -98,6 +97,7 @@ export function Toolbar({
   onAddView,
   onDeleteView,
   onRenameView,
+  onToggleBar,
   app,
 }: ToolbarProps) {
   const [openPopover, setOpenPopover] = useState<PopoverType>(null);
@@ -131,7 +131,7 @@ export function Toolbar({
     <div className="csv-db-toolbar" ref={toolbarRef}>
       <button
         className={`csv-db-toolbar-btn${hasFilters ? " csv-db-toolbar-btn-active" : ""}`}
-        onClick={() => togglePopover("filter")}
+        onClick={onToggleBar}
         title="Filter"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -142,7 +142,7 @@ export function Toolbar({
       </button>
       <button
         className={`csv-db-toolbar-btn${hasSorts ? " csv-db-toolbar-btn-active" : ""}`}
-        onClick={() => togglePopover("sort")}
+        onClick={onToggleBar}
         title="Sort"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -173,20 +173,6 @@ export function Toolbar({
       </button>
 
       {/* Popovers */}
-      {openPopover === "sort" && (
-        <SortEditor
-          activeView={activeView}
-          columns={columns}
-          onUpdateSorts={(sorts) => onUpdateView(activeViewIndex, { ...activeView, sorts })}
-        />
-      )}
-      {openPopover === "filter" && (
-        <FilterEditor
-          activeView={activeView}
-          columns={columns}
-          onUpdateFilters={(filters) => onUpdateView(activeViewIndex, { ...activeView, filters })}
-        />
-      )}
       {openPopover === "visibility" && (
         <ColumnVisibilityEditor
           activeView={activeView}

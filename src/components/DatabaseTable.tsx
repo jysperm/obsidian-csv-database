@@ -1,11 +1,12 @@
 import { useReducer, useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { App } from "obsidian";
-import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef } from "../types";
+import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef, SortRule, FilterRule } from "../types";
 import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";
 import { NewRowButton } from "./NewRowButton";
 import { ViewBar } from "./ViewBar";
 import { Toolbar } from "./Toolbar";
+import { FilterSortBar } from "./FilterSortBar";
 import { ColumnModalWrapper } from "./ColumnModal";
 import { useColumnResize } from "../hooks/useColumnResize";
 import { useColumnDrag } from "../hooks/useColumnDrag";
@@ -25,6 +26,7 @@ type Action =
   | { type: "REMOVE_OPTION_DEF"; colIdx: number; value: string }
   | { type: "REORDER_COLUMN"; dataIdx1: number; dataIdx2: number }
   | { type: "ADD_VIEW" }
+  | { type: "ADD_VIEW_FROM_DRAFT"; sorts: SortRule[]; filters: FilterRule[] }
   | { type: "DELETE_VIEW"; viewIndex: number }
   | { type: "UPDATE_VIEW"; viewIndex: number; view: ViewDef };
 
@@ -241,6 +243,23 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
       return { ...state, views: [...state.views, newView] };
     }
 
+    case "ADD_VIEW_FROM_DRAFT": {
+      const existingNames = state.views.map((v) => v.name);
+      let name = "New View";
+      if (existingNames.includes(name)) {
+        let i = 2;
+        while (existingNames.includes(`${name} ${i}`)) i++;
+        name = `${name} ${i}`;
+      }
+      const newView: ViewDef = {
+        name,
+        sorts: action.sorts,
+        filters: action.filters,
+        hiddenColumns: [],
+      };
+      return { ...state, views: [...state.views, newView] };
+    }
+
     case "DELETE_VIEW": {
       if (state.views.length <= 1) return state;
       const views = state.views.filter((_, i) => i !== action.viewIndex);
@@ -371,9 +390,22 @@ export function DatabaseTable({
   const prevModelRef = useRef(model);
   const [activeViewIndex, setActiveViewIndex] = useState(0);
 
+  // FilterSortBar state
+  const [barVisible, setBarVisible] = useState(false);
+  const [draftSorts, setDraftSorts] = useState<SortRule[]>([]);
+  const [draftFilters, setDraftFilters] = useState<FilterRule[]>([]);
+  const draftStateMapRef = useRef<Map<number, { sorts: SortRule[]; filters: FilterRule[] }>>(new Map());
+
   // Ensure activeViewIndex is valid
   const safeViewIndex = (activeViewIndex >= 0 && activeViewIndex < model.views.length) ? activeViewIndex : 0;
   const activeView = model.views[safeViewIndex];
+
+  // Determine if draft differs from saved view
+  const isDirty = useMemo(() => {
+    if (!barVisible) return false;
+    return JSON.stringify(draftSorts) !== JSON.stringify(activeView.sorts) ||
+      JSON.stringify(draftFilters) !== JSON.stringify(activeView.filters);
+  }, [barVisible, draftSorts, draftFilters, activeView.sorts, activeView.filters]);
 
   // Compute display order: columns sorted by columnIndex
   const allDisplayColumns: DisplayColumn[] = useMemo(
@@ -390,11 +422,14 @@ export function DatabaseTable({
     [allDisplayColumns, activeView.hiddenColumns]
   );
 
-  // Compute filtered and sorted rows
+  // Compute filtered and sorted rows — use draft state when bar is visible
+  const effectiveSorts = barVisible ? draftSorts : activeView.sorts;
+  const effectiveFilters = barVisible ? draftFilters : activeView.filters;
+
   const filteredSortedRows = useMemo(() => {
-    const filtered = applyFilters(model.rows, activeView.filters, model.columns);
-    return applySorts(filtered, activeView.sorts, model.columns);
-  }, [model.rows, model.columns, activeView.filters, activeView.sorts]);
+    const filtered = applyFilters(model.rows, effectiveFilters, model.columns);
+    return applySorts(filtered, effectiveSorts, model.columns);
+  }, [model.rows, model.columns, effectiveFilters, effectiveSorts]);
 
   // Ref for stable access in callbacks
   const displayColumnsRef = useRef(displayColumns);
@@ -420,6 +455,102 @@ export function DatabaseTable({
       onModelChange(model);
     }
   }, [model, onModelChange]);
+
+  // Preserve draft state when switching views
+  const handleSwitchView = useCallback((index: number) => {
+    if (barVisible) {
+      // Save current view's draft
+      draftStateMapRef.current.set(safeViewIndex, { sorts: draftSorts, filters: draftFilters });
+      // Load new view's draft or initialize from saved state
+      const savedDraft = draftStateMapRef.current.get(index);
+      const targetView = model.views[index >= 0 && index < model.views.length ? index : 0];
+      if (savedDraft) {
+        setDraftSorts(savedDraft.sorts);
+        setDraftFilters(savedDraft.filters);
+      } else {
+        setDraftSorts(targetView.sorts.map((s) => ({ ...s })));
+        setDraftFilters(targetView.filters.map((f) => ({ ...f, value: [...f.value] })));
+      }
+    }
+    setActiveViewIndex(index);
+  }, [barVisible, safeViewIndex, draftSorts, draftFilters, model.views]);
+
+  // Toggle bar visibility
+  const handleToggleBar = useCallback(() => {
+    if (barVisible) {
+      // Only close if not dirty
+      if (!isDirty) {
+        draftStateMapRef.current.clear();
+        setBarVisible(false);
+      }
+    } else {
+      // Open: initialize draft from active view
+      setDraftSorts(activeView.sorts.map((s) => ({ ...s })));
+      setDraftFilters(activeView.filters.map((f) => ({ ...f, value: [...f.value] })));
+      setBarVisible(true);
+    }
+  }, [barVisible, isDirty, activeView.sorts, activeView.filters]);
+
+  // Bar action handlers
+  const handleBarReset = useCallback(() => {
+    draftStateMapRef.current.clear();
+    setBarVisible(false);
+  }, []);
+
+  const handleBarSave = useCallback(() => {
+    dispatch({
+      type: "UPDATE_VIEW",
+      viewIndex: safeViewIndex,
+      view: { ...activeView, sorts: draftSorts, filters: draftFilters },
+    });
+    draftStateMapRef.current.clear();
+    setBarVisible(false);
+  }, [safeViewIndex, activeView, draftSorts, draftFilters]);
+
+  const handleBarSaveAsNewView = useCallback(() => {
+    dispatch({
+      type: "ADD_VIEW_FROM_DRAFT",
+      sorts: draftSorts,
+      filters: draftFilters,
+    });
+    draftStateMapRef.current.clear();
+    setBarVisible(false);
+    setActiveViewIndex(model.views.length); // switch to new view
+  }, [draftSorts, draftFilters, model.views.length]);
+
+  // Propagate column renames/deletions to draft state
+  const prevColumnsRef = useRef(model.columns);
+  useEffect(() => {
+    if (!barVisible) {
+      prevColumnsRef.current = model.columns;
+      return;
+    }
+    const prev = prevColumnsRef.current;
+    const curr = model.columns;
+    prevColumnsRef.current = curr;
+
+    if (prev === curr) return;
+
+    // Detect renames: same length, find name changes by matching columnIndex
+    if (prev.length === curr.length) {
+      for (let i = 0; i < prev.length; i++) {
+        if (prev[i].name !== curr[i].name) {
+          const oldName = prev[i].name;
+          const newName = curr[i].name;
+          setDraftSorts((s) => s.map((r) => r.column === oldName ? { ...r, column: newName } : r));
+          setDraftFilters((f) => f.map((r) => r.column === oldName ? { ...r, column: newName } : r));
+        }
+      }
+    }
+
+    // Detect deletions: column names that disappeared
+    const currNames = new Set(curr.map((c) => c.name));
+    const deletedNames = prev.map((c) => c.name).filter((n) => !currNames.has(n));
+    if (deletedNames.length > 0) {
+      setDraftSorts((s) => s.filter((r) => !deletedNames.includes(r.column)));
+      setDraftFilters((f) => f.filter((r) => !deletedNames.includes(r.column)));
+    }
+  }, [model.columns, barVisible]);
 
   const handleResizeEnd = useCallback((displayIdx: number, width: number) => {
     const dataIdx = displayColumnsRef.current[displayIdx].dataIdx;
@@ -496,11 +627,13 @@ export function DatabaseTable({
   // View management handlers
   const handleAddView = useCallback(() => {
     dispatch({ type: "ADD_VIEW" });
+    setBarVisible(false);
     setActiveViewIndex(model.views.length); // switch to the newly added view
   }, [model.views.length]);
 
   const handleDeleteView = useCallback((viewIndex: number) => {
     dispatch({ type: "DELETE_VIEW", viewIndex });
+    setBarVisible(false);
     if (viewIndex < activeViewIndex) {
       setActiveViewIndex(activeViewIndex - 1);
     } else if (viewIndex === activeViewIndex) {
@@ -525,7 +658,7 @@ export function DatabaseTable({
         <ViewBar
           views={model.views}
           activeViewIndex={safeViewIndex}
-          onSwitchView={setActiveViewIndex}
+          onSwitchView={handleSwitchView}
         />
         <Toolbar
           activeView={activeView}
@@ -540,9 +673,23 @@ export function DatabaseTable({
             const view = model.views[viewIndex];
             handleUpdateView(viewIndex, { ...view, name });
           }}
+          onToggleBar={handleToggleBar}
           app={app}
         />
       </div>
+      {barVisible && (
+        <FilterSortBar
+          draftSorts={draftSorts}
+          draftFilters={draftFilters}
+          columns={model.columns}
+          isDirty={isDirty}
+          onUpdateSorts={setDraftSorts}
+          onUpdateFilters={setDraftFilters}
+          onReset={handleBarReset}
+          onSave={handleBarSave}
+          onSaveAsNewView={handleBarSaveAsNewView}
+        />
+      )}
       <div className="csv-db-scroll-area">
         <div className="csv-db-wrapper">
           <table

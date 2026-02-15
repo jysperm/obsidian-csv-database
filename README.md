@@ -9,6 +9,8 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 - **Column management**: rename, change type, configure options, resize, reorder, and delete columns
 - **Wrap content**: per-column toggle to wrap cell content to multiple lines
 - **Select & multi-select**: color-coded tags with a dropdown picker
+- **Multiple views**: create named views, each with its own sort, filter, and column visibility settings
+- **Sort & filter**: sort by multiple columns, filter with contains / does not contain / is empty / is not empty operators
 - **Auto-save**: all changes are saved back to the CSV file immediately
 
 ## Usage
