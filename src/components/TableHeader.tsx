@@ -1,5 +1,5 @@
 import { DisplayColumn } from "../types";
-import { getTypeIcon } from "../constants";
+import { getTypeIconElement } from "./TypeIcon";
 import { DragState } from "../hooks/useColumnDrag";
 
 interface TableHeaderProps {
@@ -43,7 +43,7 @@ export function TableHeader({
               }}
             >
               <div className="csv-db-header-content">
-                <span className="csv-db-header-icon">{getTypeIcon(col.type)}</span>
+                <span className="csv-db-header-icon">{getTypeIconElement(col.type)}</span>
                 <span className="csv-db-header-name">{col.name}</span>
               </div>
               <div
@@ -53,16 +53,14 @@ export function TableHeader({
             </th>
           );
         })}
-        <th className="csv-db-add-column-cell">
-          <button
-            className="csv-db-add-column-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddColumn();
-            }}
-          >
-            +
-          </button>
+        <th
+          className="csv-db-add-column-cell"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddColumn();
+          }}
+        >
+          <div className="csv-db-add-column-btn">+</div>
         </th>
       </tr>
     </thead>

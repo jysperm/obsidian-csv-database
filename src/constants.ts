@@ -35,11 +35,12 @@ export function getTypeIcon(type: string): string {
   switch (type) {
     case "text": return "Aa";
     case "number": return "#";
-    case "date": return "📅";
+    case "date": return "⊞";
     case "checkbox": return "☑";
     case "select": return "▾";
     case "multiselect": return "≡";
-    case "note": return "📄";
+    case "note": return "↗";
     default: return "Aa";
   }
 }
+

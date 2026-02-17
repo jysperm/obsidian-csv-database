@@ -1,5 +1,5 @@
 import { ViewDef, DisplayColumn } from "../types";
-import { getTypeIcon } from "../constants";
+import { getTypeIconElement } from "./TypeIcon";
 
 interface ColumnVisibilityEditorProps {
   activeView: ViewDef;
@@ -32,7 +32,7 @@ export function ColumnVisibilityEditor({
               className="csv-db-visibility-item"
               onClick={() => toggle(col.name)}
             >
-              <span className="csv-db-visibility-icon">{getTypeIcon(col.type)}</span>
+              <span className="csv-db-visibility-icon">{getTypeIconElement(col.type)}</span>
               <span className="csv-db-visibility-name">{col.name}</span>
               <span className={`csv-db-visibility-toggle${isVisible ? " csv-db-visibility-toggle-on" : ""}`}>
                 <span className="csv-db-visibility-toggle-knob" />

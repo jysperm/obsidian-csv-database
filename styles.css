@@ -90,6 +90,11 @@ body.csv-db-dragging {
   margin-right: 4px;
   font-size: 12px;
   opacity: 0.65;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
 }
 
 .csv-db-header-name {
@@ -103,25 +108,22 @@ body.csv-db-dragging {
   min-width: 32px;
   padding: 0;
   text-align: center;
+  cursor: pointer;
+}
+
+.csv-db-add-column-cell:hover {
+  background: var(--background-modifier-hover);
 }
 
 .csv-db-add-column-btn {
-  width: 32px;
+  width: 100%;
   height: 32px;
-  background: transparent;
-  border: none;
-  color: var(--text-faint);
-  font-size: 18px;
-  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   line-height: 1;
-}
-
-.csv-db-add-column-btn:hover {
-  background: var(--background-modifier-hover);
 }
 
 /* Rows */
