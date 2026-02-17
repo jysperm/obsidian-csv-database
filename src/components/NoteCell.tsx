@@ -30,7 +30,7 @@ export function NoteCell({ value, column, onChange }: NoteCellProps) {
   const handleOpen = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (value) {
-      app.workspace.openLinkText(value, "");
+      void app.workspace.openLinkText(value, "");
     }
   };
 

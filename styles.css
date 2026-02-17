@@ -77,6 +77,11 @@ body.csv-db-dragging {
   user-select: none !important;
 }
 
+.csv-db-col-swapping {
+  transition: transform 80ms ease;
+  transform: translateX(var(--csv-db-swap-offset));
+}
+
 .csv-db-header-dragging {
   opacity: 0.5;
 }
@@ -653,6 +658,10 @@ body.csv-db-dragging {
 
 .csv-db-modal-btn-primary:hover {
   background: var(--interactive-accent-hover);
+}
+
+.csv-db-modal-btn-end {
+  margin-left: auto;
 }
 
 .csv-db-modal-btn-danger {

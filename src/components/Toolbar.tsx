@@ -16,7 +16,7 @@ class RenameViewModal extends Modal {
   }
 
   onOpen() {
-    this.titleEl.textContent = "Rename View";
+    this.titleEl.textContent = "Rename view";
     this.reactRoot = createRoot(this.contentEl);
     this.reactRoot.render(
       <RenameViewContent

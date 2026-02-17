@@ -4,7 +4,7 @@ import { serializeCSV } from "./csv-parser";
 import { ColumnDef } from "./types";
 
 export default class DatabasePlugin extends Plugin {
-  async onload() {
+  onload() {
     this.registerView(VIEW_TYPE_CSV_DATABASE, (leaf: WorkspaceLeaf) => {
       return new DatabaseView(leaf);
     });
@@ -12,7 +12,7 @@ export default class DatabasePlugin extends Plugin {
     this.registerExtensions(["csvdb"], VIEW_TYPE_CSV_DATABASE);
 
     this.addCommand({
-      id: "create-csv-database",
+      id: "create-new-database",
       name: "Create new database",
       callback: () => this.createNewDatabase(),
     });
@@ -53,7 +53,9 @@ export default class DatabasePlugin extends Plugin {
     const file = await this.app.vault.create(filePath, content);
 
     const leaf = this.app.workspace.getLeaf(false);
-    await leaf.openFile(file as TFile);
+    if (file instanceof TFile) {
+      await leaf.openFile(file);
+    }
 
     new Notice(`Created database: ${fileName}`);
   }

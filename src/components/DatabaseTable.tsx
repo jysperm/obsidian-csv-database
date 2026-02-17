@@ -203,11 +203,11 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
           const parts = splitMultiSelect(cell);
           const updated = deleted
             ? parts.filter((p) => p !== oldValue)
-            : parts.map((p) => (p === oldValue ? newOption!.value : p));
+            : parts.map((p) => (p === oldValue ? newOption.value : p));
           newCell = joinMultiSelect(updated);
         } else {
           if (cell === oldValue) {
-            newCell = deleted ? "" : newOption!.value;
+            newCell = deleted ? "" : newOption.value;
           } else {
             newCell = cell;
           }

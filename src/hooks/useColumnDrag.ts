@@ -74,8 +74,8 @@ export function useColumnDrag({ onReorder, tableRef }: UseColumnDragOptions) {
 
         // Animate columns sliding into swapped positions
         cells.forEach(({ el, delta }) => {
-          el.style.transition = `transform ${SWAP_ANIMATION_MS}ms ease`;
-          el.style.transform = `translateX(${delta}px)`;
+          el.style.setProperty("--csv-db-swap-offset", `${delta}px`);
+          el.classList.add("csv-db-col-swapping");
         });
 
         const newIdx = direction === "right" ? fromIdx + 1 : fromIdx - 1;
@@ -84,8 +84,8 @@ export function useColumnDrag({ onReorder, tableRef }: UseColumnDragOptions) {
 
         setTimeout(() => {
           cells.forEach(({ el }) => {
-            el.style.transition = "";
-            el.style.transform = "";
+            el.classList.remove("csv-db-col-swapping");
+            el.style.removeProperty("--csv-db-swap-offset");
           });
           flushSync(() => {
             onReorder(fromIdx, reorderToIdx);

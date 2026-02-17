@@ -22,7 +22,7 @@ class ConfirmModal extends Modal {
     const actions = this.contentEl.createDiv({ cls: "csv-db-modal-actions" });
     const cancelBtn = actions.createEl("button", { cls: "csv-db-modal-btn", text: "Cancel" });
     const confirmBtn = actions.createEl("button", { cls: "csv-db-modal-btn csv-db-modal-btn-danger", text: "Delete" });
-    confirmBtn.style.marginLeft = "auto";
+    confirmBtn.addClass("csv-db-modal-btn-end");
     cancelBtn.addEventListener("click", () => this.close());
     confirmBtn.addEventListener("click", () => {
       this.onConfirm();
@@ -48,7 +48,7 @@ export class DeleteOptionModal extends Modal {
   }
 
   onOpen() {
-    this.titleEl.textContent = "Delete Option";
+    this.titleEl.textContent = "Delete option";
     const p = this.contentEl.createEl("p");
     p.textContent = `How would you like to delete "${this.optionName}"?`;
     const actions = this.contentEl.createDiv({ cls: "csv-db-confirm-actions" });
@@ -296,7 +296,7 @@ export class ColumnModalWrapper extends Modal {
   }
 
   onOpen() {
-    this.titleEl.textContent = "Edit Column";
+    this.titleEl.textContent = "Edit column";
     this.reactRoot = createRoot(this.contentEl);
     this.reactRoot.render(
       <ColumnModalContent
