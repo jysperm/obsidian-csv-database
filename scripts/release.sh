@@ -1,4 +1,5 @@
 #!/bin/bash
+# Build the plugin, create a git tag, and publish a GitHub release with plugin assets.
 set -e
 
 # Read version from manifest.json

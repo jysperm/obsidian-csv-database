@@ -77,7 +77,7 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
     }
 
     case "ADD_ROW": {
-      const emptyRow = new Array(state.columns.length).fill("");
+      const emptyRow = Array.from({ length: state.columns.length }, () => "");
       return { ...state, rows: [...state.rows, emptyRow] };
     }
 
