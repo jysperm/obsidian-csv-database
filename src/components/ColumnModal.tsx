@@ -99,8 +99,15 @@ function ColorSwatchPicker({ color, onChange }: { color: TagColor; onChange: (c:
         setOpen(false);
       }
     };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     document.addEventListener("mousedown", handleDown);
-    return () => document.removeEventListener("mousedown", handleDown);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleDown);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [open]);
 
   const rect = open && btnRef.current ? btnRef.current.getBoundingClientRect() : null;

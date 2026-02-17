@@ -17,14 +17,22 @@ export function useClickOutside(
       handler();
     };
 
+    const keyListener = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handler();
+      }
+    };
+
     // Delay to avoid catching the click that opened the dropdown
     const timer = setTimeout(() => {
       document.addEventListener("mousedown", listener);
     }, 0);
+    document.addEventListener("keydown", keyListener);
 
     return () => {
       clearTimeout(timer);
       document.removeEventListener("mousedown", listener);
+      document.removeEventListener("keydown", keyListener);
     };
   }, [refs, handler, active]);
 }

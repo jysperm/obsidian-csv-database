@@ -118,7 +118,7 @@ function FilterSelectValueTrigger({
   const triggerRef = useRef<HTMLDivElement>(null);
   const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
 
-  // Close dropdown on click outside (but not on trigger)
+  // Close dropdown on click outside (but not on trigger) or Escape
   useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
@@ -128,8 +128,15 @@ function FilterSelectValueTrigger({
       if (dropdownEl && dropdownEl.contains(target)) return;
       setOpen(false);
     };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [open]);
 
   const handleClick = () => {
@@ -197,8 +204,15 @@ export function FilterPillEditor({ filter, columns, onUpdate, onDelete, onClose 
         onClose();
       }
     };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [onClose]);
 
   const column = columns.find((c) => c.name === filter.column);
