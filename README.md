@@ -30,9 +30,21 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 
 ## Installation
 
+<details>
+<summary>This plugin has not yet been approved in the Obsidian community plugin directory (review in progress).</summary>
+
 1. Open **Settings** → **Community Plugins** → **Browse**
 2. Search for **CSV Database**
 3. Click **Install**, then **Enable**
+
+</details>
+
+You need to install it via [BRAT](https://github.com/TfTHacker/obsidian42-brat):
+
+1. Install the **BRAT** plugin from **Settings** → **Community Plugins** → **Browse**
+2. Open BRAT settings, click **Add Beta Plugin**
+3. Enter `jysperm/obsidian-csv-database` and click **Add Plugin**
+4. Enable **CSV Database** in **Settings** → **Community Plugins**
 
 ## Usage
 
