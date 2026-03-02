@@ -25,6 +25,7 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 - **Wrap content**: per-column toggle to wrap cell content to multiple lines
 - **Select & multi-select**: color-coded tags with a dropdown picker
 - **Multiple views**: create named views, each with its own sort, filter, and column visibility settings
+- **Board layout**: kanban-style board view grouped by a select column, with drag-and-drop between columns
 - **Sort & filter**: sort by multiple columns, filter with contains / does not contain / is empty / is not empty operators
 - **Auto-save**: all changes are saved back to the CSV file immediately
 

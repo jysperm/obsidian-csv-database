@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { App } from "obsidian";
-import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef, SortRule, FilterRule } from "../types";
+import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef, ViewLayout, SortRule, FilterRule } from "../types";
 import { splitMultiSelect, joinMultiSelect } from "../csv-parser";
 import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";
@@ -11,12 +11,14 @@ import { FilterSortBar } from "./FilterSortBar";
 import { ColumnModalWrapper } from "./ColumnModal";
 import { useColumnResize } from "../hooks/useColumnResize";
 import { useColumnDrag } from "../hooks/useColumnDrag";
+import { KanbanView } from "./KanbanView";
 import { AppContext } from "../AppContext";
 
 type Action =
   | { type: "SET_MODEL"; model: DatabaseModel; fromExternal?: boolean }
   | { type: "SET_CELL"; rowIdx: number; colIdx: number; value: string }
   | { type: "ADD_ROW" }
+  | { type: "ADD_ROW_WITH_VALUES"; values: { colIdx: number; value: string }[] }
   | { type: "DELETE_ROW"; rowIdx: number }
   | { type: "ADD_COLUMN"; column: ColumnDef }
   | { type: "DELETE_COLUMN"; colIdx: number }
@@ -27,7 +29,7 @@ type Action =
   | { type: "REMOVE_OPTION_DEF"; colIdx: number; value: string }
   | { type: "REORDER_COLUMN"; dataIdx1: number; dataIdx2: number }
   | { type: "ADD_VIEW" }
-  | { type: "ADD_VIEW_FROM_DRAFT"; sorts: SortRule[]; filters: FilterRule[] }
+  | { type: "ADD_VIEW_FROM_DRAFT"; sorts: SortRule[]; filters: FilterRule[]; sourceView: ViewDef }
   | { type: "DELETE_VIEW"; viewIndex: number }
   | { type: "UPDATE_VIEW"; viewIndex: number; view: ViewDef };
 
@@ -50,6 +52,7 @@ function updateViewReferences(views: ViewDef[], oldName: string, newName: string
     hiddenColumns: view.hiddenColumns.map((c) =>
       c === oldName ? newName : c
     ),
+    groupByColumn: view.groupByColumn === oldName ? newName : view.groupByColumn,
   }));
 }
 
@@ -59,6 +62,7 @@ function removeColumnFromViews(views: ViewDef[], columnName: string): ViewDef[] 
     sorts: view.sorts.filter((s) => s.column !== columnName),
     filters: view.filters.filter((f) => f.column !== columnName),
     hiddenColumns: view.hiddenColumns.filter((c) => c !== columnName),
+    groupByColumn: view.groupByColumn === columnName ? undefined : view.groupByColumn,
   }));
 }
 
@@ -79,6 +83,16 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
     case "ADD_ROW": {
       const emptyRow = Array.from({ length: state.columns.length }, () => "");
       return { ...state, rows: [...state.rows, emptyRow] };
+    }
+
+    case "ADD_ROW_WITH_VALUES": {
+      const newRow = Array.from({ length: state.columns.length }, () => "");
+      for (const { colIdx, value } of action.values) {
+        if (colIdx >= 0 && colIdx < newRow.length) {
+          newRow[colIdx] = value;
+        }
+      }
+      return { ...state, rows: [...state.rows, newRow] };
     }
 
     case "DELETE_ROW": {
@@ -254,9 +268,11 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
       }
       const newView: ViewDef = {
         name,
+        layout: action.sourceView.layout,
         sorts: action.sorts,
         filters: action.filters,
-        hiddenColumns: [],
+        hiddenColumns: [...action.sourceView.hiddenColumns],
+        groupByColumn: action.sourceView.groupByColumn,
       };
       return { ...state, views: [...state.views, newView] };
     }
@@ -513,11 +529,12 @@ export function DatabaseTable({
       type: "ADD_VIEW_FROM_DRAFT",
       sorts: draftSorts,
       filters: draftFilters,
+      sourceView: activeView,
     });
     draftStateMapRef.current.clear();
     setBarVisible(false);
     setActiveViewIndex(model.views.length); // switch to new view
-  }, [draftSorts, draftFilters, model.views.length]);
+  }, [draftSorts, draftFilters, activeView, model.views.length]);
 
   // Propagate column renames/deletions to draft state
   const prevColumnsRef = useRef(model.columns);
@@ -582,6 +599,10 @@ export function DatabaseTable({
 
   const handleAddRow = useCallback(() => {
     dispatch({ type: "ADD_ROW" });
+  }, []);
+
+  const handleAddRowWithValues = useCallback((values: { colIdx: number; value: string }[]) => {
+    dispatch({ type: "ADD_ROW_WITH_VALUES", values });
   }, []);
 
   const handleAddColumn = useCallback(() => {
@@ -653,6 +674,8 @@ export function DatabaseTable({
   }
   totalWidth += 32; // add-column button width
 
+  const activeLayout = activeView.layout || "table";
+
   return (
     <AppContext.Provider value={app}>
       <div className="csv-db-viewbar">
@@ -691,42 +714,54 @@ export function DatabaseTable({
           onSaveAsNewView={handleBarSaveAsNewView}
         />
       )}
-      <div className="csv-db-scroll-area">
-        <div className="csv-db-wrapper">
-          <table
-            className="csv-db-table"
-            ref={tableRef}
-            style={{ width: `${totalWidth}px` }}
-          >
-            <colgroup ref={colGroupRef}>
-              {displayColumns.map(({ col }, i) => (
-                <col key={i} style={{ width: `${col.width ?? 180}px` }} />
-              ))}
-              <col style={{ width: "32px" }} />
-            </colgroup>
-            <TableHeader
-              displayColumns={displayColumns}
-              onResizeStart={onResizeStart}
-              consumeJustResized={consumeJustResized}
-              onAddColumn={handleAddColumn}
-              onColumnClick={handleColumnClick}
-              onDragStart={onDragStart}
-              consumeJustDragged={consumeJustDragged}
-              dragState={dragState}
-            />
-            <TableBody
-              rows={filteredSortedRows}
-              displayColumns={displayColumns}
-              onSetCell={handleSetCell}
-              onDeleteRow={handleDeleteRow}
-              onAddSelectOption={handleAddSelectOption}
-              onUpdateSelectOption={handleUpdateSelectOption}
-              onRemoveOptionDef={handleRemoveOptionDef}
-            />
-          </table>
-          <NewRowButton onAddRow={handleAddRow} />
+      {activeLayout === "table" ? (
+        <div className="csv-db-scroll-area">
+          <div className="csv-db-wrapper">
+            <table
+              className="csv-db-table"
+              ref={tableRef}
+              style={{ width: `${totalWidth}px` }}
+            >
+              <colgroup ref={colGroupRef}>
+                {displayColumns.map(({ col }, i) => (
+                  <col key={i} style={{ width: `${col.width ?? 180}px` }} />
+                ))}
+                <col style={{ width: "32px" }} />
+              </colgroup>
+              <TableHeader
+                displayColumns={displayColumns}
+                onResizeStart={onResizeStart}
+                consumeJustResized={consumeJustResized}
+                onAddColumn={handleAddColumn}
+                onColumnClick={handleColumnClick}
+                onDragStart={onDragStart}
+                consumeJustDragged={consumeJustDragged}
+                dragState={dragState}
+              />
+              <TableBody
+                rows={filteredSortedRows}
+                displayColumns={displayColumns}
+                onSetCell={handleSetCell}
+                onDeleteRow={handleDeleteRow}
+                onAddSelectOption={handleAddSelectOption}
+                onUpdateSelectOption={handleUpdateSelectOption}
+                onRemoveOptionDef={handleRemoveOptionDef}
+              />
+            </table>
+            <NewRowButton onAddRow={handleAddRow} />
+          </div>
         </div>
-      </div>
+      ) : (
+        <KanbanView
+          rows={filteredSortedRows}
+          columns={model.columns}
+          displayColumns={displayColumns}
+          activeView={activeView}
+          onSetCell={handleSetCell}
+          onDeleteRow={handleDeleteRow}
+          onAddRowWithValues={handleAddRowWithValues}
+        />
+      )}
     </AppContext.Provider>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { App, Modal } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
-import { ViewDef, ColumnDef, DisplayColumn } from "../types";
+import { ViewDef, ViewLayout, ColumnDef, DisplayColumn } from "../types";
 import { ColumnVisibilityEditor } from "./ColumnVisibilityEditor";
 
 class RenameViewModal extends Modal {
@@ -188,38 +188,117 @@ export function Toolbar({
         />
       )}
       {openPopover === "viewMenu" && (
-        <div className="csv-db-popover csv-db-view-menu" onClick={(e) => e.stopPropagation()}>
-          <div
-            className="csv-db-view-menu-item"
-            onClick={() => {
-              setOpenPopover(null);
-              onAddView();
-            }}
-          >
-            New view
-          </div>
-          <div
-            className="csv-db-view-menu-item"
-            onClick={() => {
-              setOpenPopover(null);
-              new RenameViewModal(app, activeView.name, (name) => {
-                onRenameView(activeViewIndex, name);
-              }).open();
-            }}
-          >
-            Rename
-          </div>
-          {views.length > 1 && (
-            <div
-              className="csv-db-view-menu-item csv-db-view-menu-item-danger"
-              onClick={() => {
-                setOpenPopover(null);
-                onDeleteView(activeViewIndex);
-              }}
-            >
-              Delete "{activeView.name}"
-            </div>
+        <ViewMenu
+          activeView={activeView}
+          activeViewIndex={activeViewIndex}
+          views={views}
+          columns={columns}
+          onUpdateView={onUpdateView}
+          onAddView={() => { setOpenPopover(null); onAddView(); }}
+          onDeleteView={() => { setOpenPopover(null); onDeleteView(activeViewIndex); }}
+          onRename={() => {
+            setOpenPopover(null);
+            new RenameViewModal(app, activeView.name, (name) => {
+              onRenameView(activeViewIndex, name);
+            }).open();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// --- View Menu Component ---
+
+interface ViewMenuProps {
+  activeView: ViewDef;
+  activeViewIndex: number;
+  views: ViewDef[];
+  columns: ColumnDef[];
+  onUpdateView: (viewIndex: number, view: ViewDef) => void;
+  onAddView: () => void;
+  onDeleteView: () => void;
+  onRename: () => void;
+}
+
+function ViewMenu({
+  activeView,
+  activeViewIndex,
+  views,
+  columns,
+  onUpdateView,
+  onAddView,
+  onDeleteView,
+  onRename,
+}: ViewMenuProps) {
+  const activeLayout: ViewLayout = activeView.layout || "table";
+  const selectColumns = columns.filter((c) => c.type === "select");
+
+  const setLayout = (layout: ViewLayout) => {
+    onUpdateView(activeViewIndex, { ...activeView, layout: layout === "table" ? undefined : layout });
+  };
+
+  const setGroupByColumn = (colName: string | undefined) => {
+    onUpdateView(activeViewIndex, { ...activeView, groupByColumn: colName });
+  };
+
+  return (
+    <div className="csv-db-popover csv-db-view-menu" onClick={(e) => e.stopPropagation()}>
+      {/* Layout section */}
+      <div className="csv-db-view-menu-section-label">Layout</div>
+      <div
+        className="csv-db-view-menu-item"
+        onClick={() => setLayout("table")}
+      >
+        <span className="csv-db-view-menu-check">{activeLayout === "table" ? "✓" : "\u00A0\u00A0"}</span>
+        {" "}Table
+      </div>
+      <div
+        className="csv-db-view-menu-item"
+        onClick={() => setLayout("kanban")}
+      >
+        <span className="csv-db-view-menu-check">{activeLayout === "kanban" ? "✓" : "\u00A0\u00A0"}</span>
+        {" "}Board
+      </div>
+
+      {/* Group by section (kanban only) */}
+      {activeLayout === "kanban" && (
+        <>
+          <div className="csv-db-view-menu-separator" />
+          <div className="csv-db-view-menu-section-label">Group by</div>
+          {selectColumns.length === 0 ? (
+            <div className="csv-db-view-menu-item csv-db-view-menu-item-dim">No select columns</div>
+          ) : (
+            selectColumns.map((col) => (
+              <div
+                key={col.name}
+                className="csv-db-view-menu-item"
+                onClick={() => setGroupByColumn(activeView.groupByColumn === col.name ? undefined : col.name)}
+              >
+                <span className="csv-db-view-menu-check">
+                  {activeView.groupByColumn === col.name ? "✓" : "\u00A0\u00A0"}
+                </span>
+                {" "}{col.name}
+              </div>
+            ))
           )}
+        </>
+      )}
+
+      {/* Standard view actions */}
+      <div className="csv-db-view-menu-separator" />
+      <div className="csv-db-view-menu-item" onClick={onAddView}>
+        New view
+      </div>
+      <div className="csv-db-view-menu-item" onClick={onRename}>
+        Rename
+      </div>
+      {views.length > 1 && (
+        <div
+          className="csv-db-view-menu-item csv-db-view-menu-item-danger"
+          onClick={onDeleteView}
+        >
+          Delete "{activeView.name}"
         </div>
       )}
     </div>

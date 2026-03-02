@@ -1465,3 +1465,191 @@ body.csv-db-dragging {
   padding: 6px 8px;
   border-bottom: 1px solid var(--background-modifier-border);
 }
+
+/* ========== View Menu Extensions ========== */
+.csv-db-view-menu-separator {
+  height: 1px;
+  background: var(--background-modifier-border);
+  margin: 4px 0;
+}
+
+.csv-db-view-menu-section-label {
+  padding: 6px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.csv-db-view-menu-check {
+  font-size: 12px;
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+}
+
+.csv-db-view-menu-item-dim {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.csv-db-view-menu-item-dim:hover {
+  background: none;
+}
+
+/* ========== Kanban Board ========== */
+.csv-db-kanban-scroll {
+  overflow-x: auto;
+  padding: 4px 8px 8px;
+}
+
+.csv-db-kanban-board {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.csv-db-kanban-column {
+  flex: 0 0 260px;
+  display: flex;
+  flex-direction: column;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  max-height: calc(100vh - 160px);
+}
+
+.csv-db-kanban-column-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 10px 6px;
+}
+
+.csv-db-kanban-count {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.csv-db-kanban-no-value {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.csv-db-kanban-column-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.csv-db-kanban-card {
+  background: var(--background-primary);
+  border-radius: 4px;
+  padding: 8px 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+  position: relative;
+}
+
+.csv-db-kanban-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.csv-db-kanban-card:hover .csv-db-kanban-card-delete {
+  opacity: 1;
+}
+
+.csv-db-kanban-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-normal);
+  word-break: break-word;
+}
+
+.csv-db-kanban-card-prop {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.csv-db-kanban-card-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.csv-db-kanban-card-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border-radius: 3px;
+}
+
+.csv-db-kanban-card-delete:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+
+.csv-db-kanban-new-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13px;
+  user-select: none;
+}
+
+.csv-db-kanban-new-row:hover {
+  color: var(--text-normal);
+}
+
+/* Kanban drag-and-drop */
+body.csv-db-card-dragging {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.csv-db-kanban-card-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  background: var(--background-primary);
+  border-radius: 4px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: rotate(2deg);
+  opacity: 0.9;
+}
+
+.csv-db-kanban-column-drop-target {
+  background: var(--background-modifier-hover);
+}
+
+.csv-db-kanban-card-dragging-source {
+  opacity: 0.3;
+}
+
+/* Kanban empty state */
+.csv-db-kanban-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}

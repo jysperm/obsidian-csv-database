@@ -54,11 +54,15 @@ interface FilterRule {
   value: string[];      // for contains/does-not-contain; array of values to match against
 }
 
+type ViewLayout = "table" | "kanban";
+
 interface ViewDef {
   name: string;
+  layout?: ViewLayout;           // absent = "table"
   sorts: SortRule[];
   filters: FilterRule[];
-  hiddenColumns: string[];  // column names to hide
+  hiddenColumns: string[];       // column names to hide
+  groupByColumn?: string;        // select column name (kanban only)
 }
 ```
 
@@ -135,12 +139,22 @@ The active view always starts at the first view and is not persisted. The active
 
 Sorts are applied in order (stable sort). For `text`/`select`/`note`: locale string compare. For `number`: numeric compare. For `date`: string compare (ISO format sorts correctly). For `checkbox`: "true" > "false". For `multiselect`: compare by joined string.
 
+### Board (Kanban) Layout
+
+Views support two layouts: **Table** (default) and **Board** (kanban). The layout is selected in the view's "..." menu.
+
+- **Group by**: Board layout requires a `groupByColumn` set to a `select`-type column. Without it, an empty state prompt is shown.
+- **Column order**: Board columns appear in the order defined by the select column's `options` array. A "No value" column appears at the end only when rows with empty group-by values exist.
+- **Cards**: Each card shows the first visible column's value as the title (plain text for text-like types, Tag for select/multiselect), and remaining visible columns as properties. Column visibility is controlled by `hiddenColumns`, shared with table layout.
+- **Drag-and-drop**: Dragging a card between columns changes the row's group-by cell value via `SET_CELL`. A 5px threshold activates drag mode, a ghost clone follows the cursor, and the target column highlights.
+- **New row**: Each column's "+ New" button adds a row with the group-by value pre-set via `ADD_ROW_WITH_VALUES`.
+
 ### UI Components
 
 The view bar and toolbar share a single horizontal row: view tabs on the left, icon buttons on the right. This row is outside the horizontal scroll area, so it always stays visible even when the table is wider than the viewport.
 
 - **ViewBar**: View tabs on the left side of the bar. Active tab is bold with an underline indicator. Clicking a tab switches the view.
-- **Toolbar**: Icon buttons on the right side of the bar — Filter (funnel), Sort (arrows), Fields (eye), and a "..." menu button. The "..." menu contains: New view, Rename (opens a modal), and Delete "[view name]" (only shown when more than one view exists). Filter and Sort buttons highlight in accent color when saved rules exist. Fields button highlights when columns are hidden. Clicking Sort or Filter toggles the FilterSortBar.
+- **Toolbar**: Icon buttons on the right side of the bar — Filter (funnel), Sort (arrows), Fields (eye), and a "..." menu button. The "..." menu contains: Layout selector (Table / Board), Group by selector (board layout only, lists select-type columns), New view, Rename (opens a modal), and Delete "[view name]" (only shown when more than one view exists). Filter and Sort buttons highlight in accent color when saved rules exist. Fields button highlights when columns are hidden. Clicking Sort or Filter toggles the FilterSortBar.
 - **FilterSortBar**: A horizontal bar rendered between the view bar row and the table. Contains sort pill, individual filter pills, "+ Filter" button, and Reset/Save action buttons. Clicking the sort pill opens a SortEditor popover. Clicking a filter pill opens a FilterPillEditor popover to edit that rule. Save is a split button with a dropdown for "Save as new view". Filter pills display operator symbols (`⊇` contains, `⊉` does not contain, `= ∅` is empty, `≠ ∅` is not empty) and render select/multiselect values as colored tags.
 - **SortEditor**: Popover with a list of sort rules (column dropdown + direction dropdown + remove). "+ Add sort" and "Delete sort" buttons.
 - **FilterPillEditor**: Small popover for editing a single filter rule: column dropdown, operator dropdown, value input, and delete button. For select/multiselect columns, the value area shows selected tags with remove buttons; clicking it opens a dropdown listing unselected options.
@@ -158,6 +172,10 @@ Sort and filter changes are managed as draft state while the bar is open:
 - **Save as new view**: Creates a new view from draft sorts/filters, switches to it, and closes bar.
 - **View switching**: Draft state is preserved per-view. When switching tabs while the bar is open, the current view's draft is saved and the target view's draft is restored (or initialized from saved state). The draft map is cleared on Reset/Save/Save-as-New-View.
 - **Column rename/delete propagation**: When columns are renamed or deleted while the bar is open, draft sorts/filters are updated to reflect the change.
+
+## TODO
+
+- **Row detail modal**: Clicking a card in board layout (and potentially a row in table layout) should open a modal showing all fields with inline editing. This is needed because board cards have no direct editing capability.
 
 ## Color Palette
 

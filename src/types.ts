@@ -34,11 +34,15 @@ export interface FilterRule {
   value: string[];
 }
 
+export type ViewLayout = "table" | "kanban";
+
 export interface ViewDef {
   name: string;
+  layout?: ViewLayout;
   sorts: SortRule[];
   filters: FilterRule[];
   hiddenColumns: string[];
+  groupByColumn?: string;
 }
 
 export interface DatabaseModel {
