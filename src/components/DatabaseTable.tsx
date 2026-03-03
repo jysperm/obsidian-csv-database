@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { App } from "obsidian";
-import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef, ViewLayout, SortRule, FilterRule } from "../types";
+import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef, SortRule, FilterRule } from "../types";
 import { splitMultiSelect, joinMultiSelect } from "../csv-parser";
 import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";

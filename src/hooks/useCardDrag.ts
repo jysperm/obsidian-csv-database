@@ -21,12 +21,12 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
 
       const startX = e.clientX;
       const startY = e.clientY;
-      const cardEl = (e.target as HTMLElement).closest(".csv-db-kanban-card") as HTMLElement | null;
+      const cardEl = (e.target as HTMLElement).closest<HTMLElement>(".csv-db-kanban-card");
       if (!cardEl) return;
 
-      const columnEl = cardEl.closest(".csv-db-kanban-column") as HTMLElement | null;
+      const columnEl = cardEl.closest<HTMLElement>(".csv-db-kanban-column");
       const sourceGroupValue = columnEl?.getAttribute("data-group-value") ?? "";
-      const boardEl = cardEl.closest(".csv-db-kanban-board") as HTMLElement | null;
+      const boardEl = cardEl.closest<HTMLElement>(".csv-db-kanban-board");
 
       let dragging = false;
       let ghostOffsetX = 0;
