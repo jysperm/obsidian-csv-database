@@ -1681,6 +1681,7 @@ body.csv-db-card-dragging {
   display: flex;
   flex-direction: column;
   gap: 0;
+  padding-top: 8px;
 }
 
 .csv-db-row-detail-field {

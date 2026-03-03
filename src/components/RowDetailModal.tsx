@@ -82,7 +82,7 @@ function RowDetailField({
           <div
             ref={selectAnchorRef}
             className="csv-db-row-detail-select-trigger"
-            onClick={() => setSelectOpen(true)}
+            onClick={() => { if (!selectOpen) setSelectOpen(true); }}
           >
             {opt ? (
               <Tag value={opt.value} color={opt.color || "gray"} />
@@ -115,7 +115,7 @@ function RowDetailField({
           <div
             ref={selectAnchorRef}
             className="csv-db-row-detail-select-trigger"
-            onClick={() => setSelectOpen(true)}
+            onClick={() => { if (!selectOpen) setSelectOpen(true); }}
           >
             {values.length > 0 ? (
               values.map((v) => {
@@ -150,7 +150,7 @@ function RowDetailField({
           <div
             ref={selectAnchorRef}
             className="csv-db-row-detail-note"
-            onClick={() => setSelectOpen(true)}
+            onClick={() => { if (!selectOpen) setSelectOpen(true); }}
           >
             {displayName ? (
               <>
@@ -213,6 +213,12 @@ function RowDetailModalContent({
   onRemoveOptionDef,
 }: RowDetailModalContentProps) {
   const [values, setValues] = useState([...row]);
+  const [localColumns, setLocalColumns] = useState<DisplayColumn[]>(
+    allDisplayColumns.map(dc => ({
+      ...dc,
+      col: { ...dc.col, options: dc.col.options ? [...dc.col.options] : undefined }
+    }))
+  );
 
   const handleSetCell = useCallback((rowIdx: number, colIdx: number, value: string) => {
     setValues((prev) => {
@@ -223,9 +229,75 @@ function RowDetailModalContent({
     onSetCell(rowIdx, colIdx, value);
   }, [onSetCell]);
 
+  const updateLocalColumnOptions = useCallback(
+    (dataIdx: number, updater: (options: SelectOption[]) => SelectOption[]) => {
+      setLocalColumns(prev =>
+        prev.map(dc =>
+          dc.dataIdx === dataIdx
+            ? { ...dc, col: { ...dc.col, options: updater(dc.col.options || []) } }
+            : dc
+        )
+      );
+    },
+    []
+  );
+
+  const handleAddSelectOption = useCallback((colIdx: number, option: SelectOption) => {
+    updateLocalColumnOptions(colIdx, opts => [...opts, option]);
+    onAddSelectOption(colIdx, option);
+  }, [onAddSelectOption, updateLocalColumnOptions]);
+
+  const handleUpdateSelectOption = useCallback((colIdx: number, oldValue: string, newOption: SelectOption | null) => {
+    updateLocalColumnOptions(colIdx, opts => {
+      if (newOption === null) {
+        return opts.filter(o => o.value !== oldValue);
+      }
+      return opts.map(o => o.value === oldValue ? newOption : o);
+    });
+
+    if (newOption === null) {
+      // Delete: clear value from local row
+      const col = allDisplayColumns.find(dc => dc.dataIdx === colIdx)?.col;
+      setValues(prev => {
+        const next = [...prev];
+        if (col?.type === "multiselect") {
+          const current = splitMultiSelect(next[colIdx]);
+          next[colIdx] = joinMultiSelect(current.filter(v => v !== oldValue));
+        } else {
+          if (next[colIdx] === oldValue) {
+            next[colIdx] = "";
+          }
+        }
+        return next;
+      });
+    } else if (newOption.value !== oldValue) {
+      // Rename: update value in local row
+      const col = allDisplayColumns.find(dc => dc.dataIdx === colIdx)?.col;
+      setValues(prev => {
+        const next = [...prev];
+        if (col?.type === "multiselect") {
+          const current = splitMultiSelect(next[colIdx]);
+          next[colIdx] = joinMultiSelect(current.map(v => v === oldValue ? newOption.value : v));
+        } else {
+          if (next[colIdx] === oldValue) {
+            next[colIdx] = newOption.value;
+          }
+        }
+        return next;
+      });
+    }
+
+    onUpdateSelectOption(colIdx, oldValue, newOption);
+  }, [onUpdateSelectOption, updateLocalColumnOptions, allDisplayColumns]);
+
+  const handleRemoveOptionDef = useCallback((colIdx: number, value: string) => {
+    updateLocalColumnOptions(colIdx, opts => opts.filter(o => o.value !== value));
+    onRemoveOptionDef(colIdx, value);
+  }, [onRemoveOptionDef, updateLocalColumnOptions]);
+
   return (
     <div className="csv-db-row-detail">
-      {allDisplayColumns.map(({ col, dataIdx }) => (
+      {localColumns.map(({ col, dataIdx }) => (
         <RowDetailField
           key={col.name}
           col={col}
@@ -233,9 +305,9 @@ function RowDetailModalContent({
           value={values[dataIdx]}
           rowOriginalIndex={rowOriginalIndex}
           onSetCell={handleSetCell}
-          onAddSelectOption={onAddSelectOption}
-          onUpdateSelectOption={onUpdateSelectOption}
-          onRemoveOptionDef={onRemoveOptionDef}
+          onAddSelectOption={handleAddSelectOption}
+          onUpdateSelectOption={handleUpdateSelectOption}
+          onRemoveOptionDef={handleRemoveOptionDef}
         />
       ))}
     </div>
