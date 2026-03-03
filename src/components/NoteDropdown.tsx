@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { useApp } from "../AppContext";
+import { useApp, usePortalContainer } from "../AppContext";
 import { useClickOutside } from "../hooks/useClickOutside";
 
 interface NoteDropdownProps {
@@ -19,6 +19,7 @@ export function NoteDropdown({
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const app = useApp();
+  const portalContainer = usePortalContainer();
 
   const handleClose = useCallback(() => {
     onClose();
@@ -107,6 +108,6 @@ export function NoteDropdown({
         ))}
       </div>
     </div>,
-    document.body
+    portalContainer
   );
 }

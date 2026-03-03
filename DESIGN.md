@@ -148,6 +148,7 @@ Views support two layouts: **Table** (default) and **Board** (kanban). The layou
 - **Cards**: Each card shows the first visible column's value as the title (plain text for text-like types, Tag for select/multiselect), and remaining visible columns as properties. Column visibility is controlled by `hiddenColumns`, shared with table layout.
 - **Drag-and-drop**: Dragging a card between columns changes the row's group-by cell value via `SET_CELL`. A 5px threshold activates drag mode, a ghost clone follows the cursor, and the target column highlights.
 - **New row**: Each column's "+ New" button adds a row with the group-by value pre-set via `ADD_ROW_WITH_VALUES`.
+- **Row detail modal**: Clicking a card opens a modal showing all fields (including hidden columns) with inline editing. Each field is rendered as a horizontal row with a type icon and column name on the left, and an editable value on the right. Text/number/date fields use plain inputs, select/multiselect fields open their respective dropdowns, checkbox fields toggle directly, and note fields open the note picker. A drag guard (`consumeJustDragged`) prevents the modal from opening after drag-and-drop.
 
 ### UI Components
 
@@ -172,10 +173,6 @@ Sort and filter changes are managed as draft state while the bar is open:
 - **Save as new view**: Creates a new view from draft sorts/filters, switches to it, and closes bar.
 - **View switching**: Draft state is preserved per-view. When switching tabs while the bar is open, the current view's draft is saved and the target view's draft is restored (or initialized from saved state). The draft map is cleared on Reset/Save/Save-as-New-View.
 - **Column rename/delete propagation**: When columns are renamed or deleted while the bar is open, draft sorts/filters are updated to reflect the change.
-
-## TODO
-
-- **Row detail modal**: Clicking a card in board layout (and potentially a row in table layout) should open a modal showing all fields with inline editing. This is needed because board cards have no direct editing capability.
 
 ## Color Palette
 

@@ -1582,6 +1582,23 @@ body.csv-db-dragging {
   gap: 2px;
 }
 
+.csv-db-kanban-card-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.csv-db-kanban-card-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.csv-db-kanban-card-checkbox-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .csv-db-kanban-card-delete {
   position: absolute;
   top: 4px;
@@ -1652,4 +1669,117 @@ body.csv-db-card-dragging {
   padding: 40px 20px;
   color: var(--text-muted);
   font-size: 14px;
+}
+
+/* ========== Row Detail Modal ========== */
+.csv-db-row-detail-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.csv-db-row-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.csv-db-row-detail-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 36px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.csv-db-row-detail-field:hover {
+  background: var(--background-secondary);
+}
+
+.csv-db-row-detail-label {
+  width: 150px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.csv-db-row-detail-label-icon {
+  width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.csv-db-row-detail-label-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.csv-db-row-detail-value {
+  flex: 1;
+  min-width: 0;
+}
+
+.csv-db-row-detail-input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  font-size: 14px;
+  color: var(--text-normal);
+  outline: none;
+  padding: 6px 8px;
+}
+
+.csv-db-row-detail-input:focus {
+  border-color: var(--interactive-accent);
+}
+
+.csv-db-row-detail-input::placeholder {
+  color: var(--text-faint);
+}
+
+.csv-db-row-detail-select-trigger {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  cursor: pointer;
+  min-height: 30px;
+  padding: 4px 8px;
+  align-items: center;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+}
+
+.csv-db-row-detail-select-trigger:hover {
+  border-color: var(--interactive-accent);
+}
+
+.csv-db-row-detail-empty {
+  color: var(--text-faint);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.csv-db-row-detail-note {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  min-height: 30px;
+}
+
+.csv-db-row-detail-note:hover {
+  border-color: var(--interactive-accent);
 }

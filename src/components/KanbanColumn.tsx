@@ -11,6 +11,7 @@ interface KanbanColumnProps {
   onDeleteRow: (rowIdx: number) => void;
   onAddRowWithValues: (values: { colIdx: number; value: string }[]) => void;
   onCardMouseDown: (e: React.MouseEvent, rowOriginalIndex: number) => void;
+  onCardClick: (rowOriginalIndex: number) => void;
 }
 
 export function KanbanColumn({
@@ -22,6 +23,7 @@ export function KanbanColumn({
   onDeleteRow,
   onAddRowWithValues,
   onCardMouseDown,
+  onCardClick,
 }: KanbanColumnProps) {
   return (
     <div className="csv-db-kanban-column" data-group-value={groupValue}>
@@ -43,6 +45,7 @@ export function KanbanColumn({
             groupByDataIdx={groupByDataIdx}
             onDeleteRow={onDeleteRow}
             onMouseDown={onCardMouseDown}
+            onCardClick={onCardClick}
           />
         ))}
       </div>

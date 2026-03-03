@@ -5,6 +5,7 @@ import { pickColor } from "../constants";
 import { Tag } from "./Tag";
 import { OptionEditPanel } from "./OptionEditPanel";
 import { useClickOutside } from "../hooks/useClickOutside";
+import { usePortalContainer } from "../AppContext";
 
 interface MultiSelectDropdownProps {
   column: ColumnDef;
@@ -32,6 +33,7 @@ export function MultiSelectDropdown({
   const [editAnchorRect, setEditAnchorRect] = useState<DOMRect | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const portalContainer = usePortalContainer();
 
   const handleClose = useCallback(() => {
     onClose();
@@ -169,6 +171,6 @@ export function MultiSelectDropdown({
         />
       )}
     </div>,
-    document.body
+    portalContainer
   );
 }

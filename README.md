@@ -13,8 +13,13 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 </p>
 
 <p align="center">
-  <img src="screenshots/inline-editing.png" width="400" alt="Inline editing with multi-select dropdown" /><br />
+  <img src="screenshots/inline-editing.png" width="380" alt="Inline editing with multi-select dropdown" /><br />
   <span>Inline editing with multi-select dropdown</span>
+</p>
+
+<p align="center">
+  <img src="screenshots/layout-kanban.png" width="680" alt="Board layout with drag-and-drop" /><br />
+  <span>Board layout with drag-and-drop</span>
 </p>
 
 ## Features

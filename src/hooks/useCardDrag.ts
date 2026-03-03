@@ -14,6 +14,7 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
     sourceCard: HTMLElement | null;
     board: HTMLElement | null;
   } | null>(null);
+  const justDraggedRef = useRef(false);
 
   const onCardMouseDown = useCallback(
     (e: React.MouseEvent, rowOriginalIndex: number) => {
@@ -91,6 +92,8 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
         if (!dragging) return;
 
         document.body.classList.remove("csv-db-card-dragging");
+        justDraggedRef.current = true;
+        requestAnimationFrame(() => { justDraggedRef.current = false; });
 
         // Clean up ghost
         if (dragRef.current?.ghost) {
@@ -123,7 +126,15 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
     [onCardMove]
   );
 
-  return { onCardMouseDown };
+  const consumeJustDragged = useCallback((): boolean => {
+    if (justDraggedRef.current) {
+      justDraggedRef.current = false;
+      return true;
+    }
+    return false;
+  }, []);
+
+  return { onCardMouseDown, consumeJustDragged };
 }
 
 function getColumnAtPoint(x: number, y: number, board: HTMLElement | null): HTMLElement | null {

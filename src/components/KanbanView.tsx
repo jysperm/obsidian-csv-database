@@ -11,6 +11,7 @@ interface KanbanViewProps {
   onSetCell: (rowIdx: number, colIdx: number, value: string) => void;
   onDeleteRow: (rowIdx: number) => void;
   onAddRowWithValues: (values: { colIdx: number; value: string }[]) => void;
+  onCardClick: (rowOriginalIndex: number) => void;
 }
 
 export function KanbanView({
@@ -21,6 +22,7 @@ export function KanbanView({
   onSetCell,
   onDeleteRow,
   onAddRowWithValues,
+  onCardClick,
 }: KanbanViewProps) {
   const groupByColumn = activeView.groupByColumn;
 
@@ -91,7 +93,12 @@ export function KanbanView({
     onSetCell(rowOriginalIndex, groupByInfo.dataIdx, targetGroupValue);
   }, [groupByInfo, onSetCell]);
 
-  const { onCardMouseDown } = useCardDrag({ onCardMove: handleCardMove });
+  const { onCardMouseDown, consumeJustDragged } = useCardDrag({ onCardMove: handleCardMove });
+
+  const handleCardClickGuarded = useCallback((rowOriginalIndex: number) => {
+    if (consumeJustDragged()) return;
+    onCardClick(rowOriginalIndex);
+  }, [consumeJustDragged, onCardClick]);
 
   if (!groupByInfo) {
     return (
@@ -115,6 +122,7 @@ export function KanbanView({
             onDeleteRow={onDeleteRow}
             onAddRowWithValues={onAddRowWithValues}
             onCardMouseDown={onCardMouseDown}
+            onCardClick={handleCardClickGuarded}
           />
         ))}
       </div>

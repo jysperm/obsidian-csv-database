@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { SelectOption, TagColor } from "../types";
 import { TAG_COLOR_OPTIONS, TAG_COLORS } from "../constants";
 import { useClickOutside } from "../hooks/useClickOutside";
-import { useApp } from "../AppContext";
+import { useApp, usePortalContainer } from "../AppContext";
 import { DeleteOptionModal } from "./ColumnModal";
 
 const COLOR_LABELS: Record<TagColor, string> = {
@@ -30,6 +30,7 @@ interface OptionEditPanelProps {
 
 export function OptionEditPanel({ option, anchorRect, panelRef, onUpdate, onRemoveOptionDef, onClose, onCloseDropdown }: OptionEditPanelProps) {
   const app = useApp();
+  const portalContainer = usePortalContainer();
   const [name, setName] = useState(option.value);
   const [color, setColor] = useState<TagColor>(option.color || "gray");
 
@@ -133,6 +134,6 @@ export function OptionEditPanel({ option, anchorRect, panelRef, onUpdate, onRemo
         </div>
       </div>
     </div>,
-    document.body
+    portalContainer
   );
 }

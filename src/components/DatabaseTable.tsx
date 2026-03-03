@@ -9,6 +9,7 @@ import { ViewBar } from "./ViewBar";
 import { Toolbar } from "./Toolbar";
 import { FilterSortBar } from "./FilterSortBar";
 import { ColumnModalWrapper } from "./ColumnModal";
+import { RowDetailModalWrapper } from "./RowDetailModal";
 import { useColumnResize } from "../hooks/useColumnResize";
 import { useColumnDrag } from "../hooks/useColumnDrag";
 import { KanbanView } from "./KanbanView";
@@ -646,6 +647,16 @@ export function DatabaseTable({
     [app, model.columns]
   );
 
+  const handleCardClick = useCallback((rowOriginalIndex: number) => {
+    const row = model.rows[rowOriginalIndex];
+    if (!row) return;
+    const modal = new RowDetailModalWrapper(
+      app, row, rowOriginalIndex, allDisplayColumns,
+      handleSetCell, handleAddSelectOption, handleUpdateSelectOption, handleRemoveOptionDef,
+    );
+    modal.open();
+  }, [app, model.rows, allDisplayColumns, handleSetCell, handleAddSelectOption, handleUpdateSelectOption, handleRemoveOptionDef]);
+
   // View management handlers
   const handleAddView = useCallback(() => {
     dispatch({ type: "ADD_VIEW" });
@@ -760,6 +771,7 @@ export function DatabaseTable({
           onSetCell={handleSetCell}
           onDeleteRow={handleDeleteRow}
           onAddRowWithValues={handleAddRowWithValues}
+          onCardClick={handleCardClick}
         />
       )}
     </AppContext.Provider>
