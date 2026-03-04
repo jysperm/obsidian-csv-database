@@ -11,8 +11,8 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
     rowOriginalIndex: number;
     sourceGroupValue: string;
     ghost: HTMLElement | null;
-    sourceCard: HTMLElement | null;
-    board: HTMLElement | null;
+    sourceCard: Element | null;
+    board: Element | null;
   } | null>(null);
   const justDraggedRef = useRef(false);
 
@@ -22,12 +22,12 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
 
       const startX = e.clientX;
       const startY = e.clientY;
-      const cardEl = (e.target as HTMLElement).closest<HTMLElement>(".csv-db-kanban-card");
-      if (!cardEl) return;
+      const cardEl = (e.currentTarget as HTMLElement).closest(".csv-db-kanban-card");
+      if (!(cardEl instanceof HTMLElement)) return;
 
-      const columnEl = cardEl.closest<HTMLElement>(".csv-db-kanban-column");
+      const columnEl = cardEl.closest(".csv-db-kanban-column");
       const sourceGroupValue = columnEl?.getAttribute("data-group-value") ?? "";
-      const boardEl = cardEl.closest<HTMLElement>(".csv-db-kanban-board");
+      const boardEl = cardEl.closest(".csv-db-kanban-board");
 
       let dragging = false;
       let ghostOffsetX = 0;
@@ -137,14 +137,14 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
   return { onCardMouseDown, consumeJustDragged };
 }
 
-function getColumnAtPoint(x: number, y: number, board: HTMLElement | null): HTMLElement | null {
+function getColumnAtPoint(x: number, y: number, board: Element | null): Element | null {
   const container = board || document;
   const columns = container.querySelectorAll(".csv-db-kanban-column");
   for (let i = 0; i < columns.length; i++) {
     const col = columns[i];
     const rect = col.getBoundingClientRect();
     if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-      return col as HTMLElement;
+      return col;
     }
   }
   return null;
