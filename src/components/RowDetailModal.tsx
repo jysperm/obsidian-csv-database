@@ -3,13 +3,14 @@ import { App, Modal } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 import { ColumnDef, DisplayColumn, SelectOption } from "../types";
 import { splitMultiSelect, joinMultiSelect } from "../csv-parser";
-import { AppContext, PortalContainerContext } from "../AppContext";
+import { AppContext, PortalContainerContext, useApp } from "../AppContext";
 import { Tag } from "./Tag";
 import { CheckboxCell } from "./CheckboxCell";
 import { SelectDropdown } from "./SelectDropdown";
 import { MultiSelectDropdown } from "./MultiSelectDropdown";
 import { NoteDropdown } from "./NoteDropdown";
 import { getTypeIconElement } from "./TypeIcon";
+import { getNoteDisplayName, notePathExists, openNoteValue } from "../note-utils";
 
 interface RowDetailFieldProps {
   col: ColumnDef;
@@ -34,6 +35,7 @@ function RowDetailField({
 }: RowDetailFieldProps) {
   const [selectOpen, setSelectOpen] = useState(false);
   const selectAnchorRef = useRef<HTMLDivElement>(null);
+  const app = useApp();
 
   const handleTextCommit = useCallback((newValue: string) => {
     if (newValue !== value) {
@@ -145,7 +147,14 @@ function RowDetailField({
 
       case "note": {
         const anchorRect = getAnchorRect();
-        const displayName = value ? value.replace(/\.md$/, "").split("/").pop() : null;
+        const displayName = value ? getNoteDisplayName(value) : null;
+        const exists = notePathExists(app, value);
+        const handleOpen = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          if (value) {
+            void openNoteValue(app, value);
+          }
+        };
         return (
           <div
             ref={selectAnchorRef}
@@ -154,8 +163,13 @@ function RowDetailField({
           >
             {displayName ? (
               <>
-                <span className="csv-db-note-cell-icon">📄</span>
                 <span>{displayName}</span>
+                <button
+                  className={`csv-db-note-open-btn${exists ? "" : " is-create"}`}
+                  onClick={handleOpen}
+                >
+                  {exists ? "OPEN" : "CREATE"}
+                </button>
               </>
             ) : (
               <span className="csv-db-row-detail-empty">Empty</span>

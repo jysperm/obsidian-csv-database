@@ -325,9 +325,7 @@ body.csv-db-dragging {
 /* Combined input area with tags */
 .csv-db-dropdown-input-area {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  row-gap: 4px;
   padding: 6px 8px;
   border-bottom: 1px solid var(--background-modifier-border);
   cursor: text;
@@ -1422,23 +1420,40 @@ body.csv-db-dragging {
   color: var(--text-normal);
 }
 
-/* Note dropdown selected item */
-.csv-db-note-selected {
+.csv-db-note-open-btn.is-create {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.csv-db-cell:hover .csv-db-note-open-btn.is-create,
+.csv-db-row-detail-note:hover .csv-db-note-open-btn.is-create,
+.csv-db-note-open-btn.is-create:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.csv-db-note-clear-btn {
+  width: 18px;
+  height: 18px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
-  border-radius: 3px;
-  background: var(--background-secondary);
-  font-size: 13px;
+  justify-content: center;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: none !important;
 }
 
-.csv-db-note-selected-icon {
-  font-size: 12px;
-}
-
-.csv-db-note-selected-name {
+.csv-db-note-clear-btn:hover {
+  background: var(--background-modifier-hover);
   color: var(--text-normal);
+}
+
+.csv-db-note-dropdown.is-empty {
+  padding-bottom: 0;
 }
 
 /* Note dropdown item styles */

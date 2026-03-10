@@ -78,6 +78,21 @@ interface ViewDef {
 | multiselect | Pipe-separated values (with escaping)   | `Tag1|Tag2|Tag3`   |
 | note        | Vault-relative file path                | `folder/My Note.md` |
 
+### Note Editing Behavior
+
+`note` cells store a note reference string. The editor supports both:
+
+- Selecting an existing note from the dropdown search results
+- Entering an arbitrary vault-relative path string directly
+
+Typing a path and pressing Enter commits it immediately. Moving focus away from the note editor also commits the typed path.
+
+The note editor uses a single-value combobox interaction: opening it places the current value directly in the input and selects it, so typing replaces the existing value instead of appending to it.
+
+In display mode, note cells show an action button instead of a status badge: `OPEN` is always visible when the target note exists, while `CREATE` only appears on hover when the stored path does not currently exist in the vault.
+
+Stored values may include the `.md` suffix or omit it. Existence checks and opening use Obsidian's link resolution directly. If nothing resolves, opening the note passes the stored value to Obsidian, which creates the target note.
+
 ### Multiselect Escaping
 
 Multiselect values are separated by `|`. To support literal `|` and `\` characters in option values, a backslash escape mechanism is used:

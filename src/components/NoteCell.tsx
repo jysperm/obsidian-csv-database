@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ColumnDef } from "../types";
 import { useApp } from "../AppContext";
 import { NoteDropdown } from "./NoteDropdown";
+import { getNoteDisplayName, notePathExists, openNoteValue } from "../note-utils";
 
 interface NoteCellProps {
   value: string;
@@ -13,6 +14,7 @@ export function NoteCell({ value, column, onChange }: NoteCellProps) {
   const [open, setOpen] = useState(false);
   const tdRef = useRef<HTMLTableCellElement>(null);
   const app = useApp();
+  const exists = useMemo(() => notePathExists(app, value), [app, value]);
 
   const handleClick = () => {
     if (!open) {
@@ -25,12 +27,12 @@ export function NoteCell({ value, column, onChange }: NoteCellProps) {
     setOpen(false);
   };
 
-  const basename = value ? value.replace(/\.md$/, "").split("/").pop() : "";
+  const basename = value ? getNoteDisplayName(value) : "";
 
   const handleOpen = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (value) {
-      void app.workspace.openLinkText(value, "");
+      void openNoteValue(app, value);
     }
   };
 
@@ -42,10 +44,12 @@ export function NoteCell({ value, column, onChange }: NoteCellProps) {
     >
       {value && (
         <span className="csv-db-note-cell-content">
-          <span className="csv-db-note-cell-icon">📄</span>
           <span className="csv-db-note-cell-name">{basename}</span>
-          <button className="csv-db-note-open-btn" onClick={handleOpen}>
-            OPEN
+          <button
+            className={`csv-db-note-open-btn${exists ? "" : " is-create"}`}
+            onClick={handleOpen}
+          >
+            {exists ? "OPEN" : "CREATE"}
           </button>
         </span>
       )}
