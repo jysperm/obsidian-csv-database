@@ -26,8 +26,12 @@ interface DatabaseMetadata {
 ```typescript
 interface ColumnDef {
   name: string;           // unique across all columns
-  type: "text" | "number" | "date" | "checkbox" | "select" | "multiselect" | "note";
+  type: "text" | "number" | "date" | "checkbox" | "select" | "multiselect" | "note" | "title" | "relation";
   options?: Array<{ value: string; color?: string }>;
+  titleNoteEnabled?: boolean;
+  titleNoteFolder?: string;
+  relationTargetPath?: string;
+  relationMultiple?: boolean;
   width?: number;         // column width in pixels, default 180
   columnIndex?: number;   // display order, defaults to positional index
   wrapContent?: boolean;  // wrap cell content to multiple lines, default false
@@ -77,6 +81,8 @@ interface ViewDef {
 | select      | Option value string                     | `Todo`             |
 | multiselect | Pipe-separated values (with escaping)   | `Tag1|Tag2|Tag3`   |
 | note        | Vault-relative file path                | `folder/My Note.md` |
+| title       | Unique row title                        | `Project Alpha`    |
+| relation    | Title value, or pipe-separated titles   | `Project Alpha`    |
 
 ### Note Editing Behavior
 
@@ -92,6 +98,18 @@ The note editor uses a single-value combobox interaction: opening it places the 
 In display mode, note cells show an action button instead of a status badge: `OPEN` is always visible when the target note exists, while `CREATE` only appears on hover when the stored path does not currently exist in the vault.
 
 Stored values may include the `.md` suffix or omit it. Existence checks and opening use Obsidian's link resolution directly. If nothing resolves, opening the note passes the stored value to Obsidian, which creates the target note.
+
+### Title and Relation Behavior
+
+Each database can have at most one `title` column. Title values are kept unique within the database by appending a numeric suffix when needed. A database must have a title column before it can be selected as a `relation` target.
+
+Title columns have a `Link to note` setting, enabled by default. When enabled, title cells show an `OPEN` / `CREATE` action and resolve notes from the title value. `titleNoteFolder` controls where those notes live and is preserved even when `Link to note` is disabled: folder paths starting with `/` are relative to the vault root, while other folder paths are relative to the current `.csvdb` file's folder. When `Link to note` is disabled, the title is only a unique row label and no note path is resolved.
+
+Relation columns store the target row's title value. Multi-relation columns use the same pipe-separated escaping format as multiselect columns. The relation picker lists rows from the target database's title column. `relationTargetPath` uses the same path rules as `titleNoteFolder`: paths starting with `/` are relative to the vault root, while other paths are relative to the current `.csvdb` file's folder.
+
+Self-relations are allowed. When a relation targets the current database, candidates are read from the in-memory model rather than re-reading the current file from disk.
+
+Renaming a title value does not update relation cells in other databases. This is a known limitation of using the title as the stored relation identity: existing relations keep the old title string until edited manually.
 
 ### Multiselect Escaping
 
@@ -145,14 +163,14 @@ The active view always starts at the first view and is not persisted. The active
 
 #### Filter Logic
 
-- **contains**: for text/number/date/note, cell includes any value in the array (case-insensitive); for select, cell equals any value; for multiselect, cell values intersect with filter values
+- **contains**: for text/number/date/note/title/relation, cell includes any value in the array (case-insensitive); for select, cell equals any value; for multiselect, cell values intersect with filter values
 - **does-not-contain**: inverse of contains
 - **is-empty**: cell is empty string
 - **is-not-empty**: cell is non-empty
 
 #### Sort Logic
 
-Sorts are applied in order (stable sort). For `text`/`select`/`note`: locale string compare. For `number`: numeric compare. For `date`: string compare (ISO format sorts correctly). For `checkbox`: "true" > "false". For `multiselect`: compare by joined string.
+Sorts are applied in order (stable sort). For `text`/`select`/`note`/`title`/`relation`: locale string compare. For `number`: numeric compare. For `date`: string compare (ISO format sorts correctly). For `checkbox`: "true" > "false". For `multiselect`: compare by joined string.
 
 ### Board (Kanban) Layout
 
@@ -163,7 +181,7 @@ Views support two layouts: **Table** (default) and **Board** (kanban). The layou
 - **Cards**: Each card shows the first visible column's value as the title (plain text for text-like types, Tag for select/multiselect), and remaining visible columns as properties. Column visibility is controlled by `hiddenColumns`, shared with table layout.
 - **Drag-and-drop**: Dragging a card between columns changes the row's group-by cell value via `SET_CELL`. A 5px threshold activates drag mode, a ghost clone follows the cursor, and the target column highlights.
 - **New row**: Each column's "+ New" button adds a row with the group-by value pre-set via `ADD_ROW_WITH_VALUES`.
-- **Row detail modal**: Clicking a card opens a modal showing all fields (including hidden columns) with inline editing. Each field is rendered as a horizontal row with a type icon and column name on the left, and an editable value on the right. Text/number/date fields use plain inputs, select/multiselect fields open their respective dropdowns, checkbox fields toggle directly, and note fields open the note picker. A drag guard (`consumeJustDragged`) prevents the modal from opening after drag-and-drop.
+- **Row detail modal**: Clicking a card opens a modal showing all fields (including hidden columns) with inline editing. Each field is rendered as a horizontal row with a type icon and column name on the left, and an editable value on the right. Text/number/date/title fields use plain inputs, select/multiselect/relation fields open their respective dropdowns, checkbox fields toggle directly, and note fields open the note picker. A drag guard (`consumeJustDragged`) prevents the modal from opening after drag-and-drop.
 
 ### UI Components
 

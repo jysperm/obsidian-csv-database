@@ -4,6 +4,8 @@ import { TextCell } from "./TextCell";
 import { SelectCell } from "./SelectCell";
 import { MultiSelectCell } from "./MultiSelectCell";
 import { NoteCell } from "./NoteCell";
+import { TitleCell } from "./TitleCell";
+import { RelationCell } from "./RelationCell";
 
 interface CellProps {
   value: string;
@@ -51,6 +53,14 @@ export function Cell({ value, column, onChange, onAddOption, onUpdateOption, onR
 
   if (column.type === "note") {
     return <NoteCell value={value} column={column} onChange={onChange} />;
+  }
+
+  if (column.type === "title") {
+    return <TitleCell value={value} column={column} onChange={onChange} />;
+  }
+
+  if (column.type === "relation") {
+    return <RelationCell value={value} column={column} onChange={onChange} />;
   }
 
   // text, number, date

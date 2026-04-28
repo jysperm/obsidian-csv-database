@@ -62,6 +62,7 @@ export class DatabaseView extends TextFileView {
           this.pushModel = setter;
         },
         app: this.app,
+        databasePath: this.file?.path || "",
       })
     );
   }

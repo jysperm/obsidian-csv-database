@@ -1,5 +1,7 @@
 import { ColumnDef, DisplayColumn } from "../types";
 import { splitMultiSelect } from "../csv-parser";
+import { splitRelationValue } from "../relation-utils";
+import { RelationPill } from "./RelationPill";
 import { Tag } from "./Tag";
 
 interface KanbanCardProps {
@@ -55,6 +57,18 @@ function renderCardProperty(value: string, col: ColumnDef): React.ReactNode {
     );
   }
 
+  if (col.type === "relation") {
+    const values = splitRelationValue(value, col);
+    if (values.length === 0) return null;
+    return (
+      <span className="csv-db-kanban-card-tags">
+        {values.map((v) => (
+          <RelationPill key={v} value={v} />
+        ))}
+      </span>
+    );
+  }
+
   return <span>{value}</span>;
 }
 
@@ -72,7 +86,7 @@ export function KanbanCard({
   const propertyColumns = visibleColumns.slice(1);
 
   // Title: render with type awareness — use plain text for text-like types, Tag for select types
-  const titleIsPlainText = titleCol && (titleCol.col.type === "text" || titleCol.col.type === "number" || titleCol.col.type === "date");
+  const titleIsPlainText = titleCol && (titleCol.col.type === "text" || titleCol.col.type === "title" || titleCol.col.type === "number" || titleCol.col.type === "date");
   const titleValue = titleCol ? row[titleCol.dataIdx] : "";
 
   return (

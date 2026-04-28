@@ -1,4 +1,4 @@
-export type ColumnType = "text" | "number" | "date" | "checkbox" | "select" | "multiselect" | "note";
+export type ColumnType = "text" | "number" | "date" | "checkbox" | "select" | "multiselect" | "note" | "title" | "relation";
 
 export type TagColor = "gray" | "brown" | "orange" | "yellow" | "green" | "blue" | "purple" | "pink" | "red";
 
@@ -11,6 +11,10 @@ export interface ColumnDef {
   name: string;
   type: ColumnType;
   options?: SelectOption[];
+  titleNoteEnabled?: boolean;
+  titleNoteFolder?: string;
+  relationTargetPath?: string;
+  relationMultiple?: boolean;
   width?: number;
   columnIndex?: number;
   wrapContent?: boolean;

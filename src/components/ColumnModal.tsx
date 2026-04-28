@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { App, Modal } from "obsidian";
+import { App, Modal, TFile } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 import { ColumnDef, ColumnType, SelectOption, TagColor } from "../types";
 import { COLUMN_TYPES, TAG_COLOR_OPTIONS, TAG_COLORS } from "../constants";
+import { fileHasTitleColumn, formatRelationTargetPath } from "../relation-utils";
 
 class ConfirmModal extends Modal {
   private message: string;
@@ -77,7 +78,9 @@ export class DeleteOptionModal extends Modal {
 interface ColumnModalContentProps {
   app: App;
   column: ColumnDef;
-  onSave: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean) => void;
+  columns: ColumnDef[];
+  databasePath: string;
+  onSave: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean, titleNoteEnabled: boolean, titleNoteFolder: string, relationTargetPath: string, relationMultiple: boolean) => void;
   onDelete: () => void;
   onRemoveOption: (value: string, removeData: boolean) => void;
 }
@@ -147,16 +150,57 @@ function ColorSwatchPicker({ color, onChange }: { color: TagColor; onChange: (c:
   );
 }
 
-function ColumnModalContent({ app, column, onSave, onDelete, onRemoveOption }: ColumnModalContentProps) {
+function ColumnModalContent({ app, column, columns, databasePath, onSave, onDelete, onRemoveOption }: ColumnModalContentProps) {
   const [name, setName] = useState(column.name);
   const [type, setType] = useState<ColumnType>(column.type);
   const [options, setOptions] = useState<SelectOption[]>(
     column.options ? column.options.map((o) => ({ ...o })) : []
   );
   const [wrapContent, setWrapContent] = useState(column.wrapContent ?? false);
+  const [titleNoteEnabled, setTitleNoteEnabled] = useState(column.titleNoteEnabled ?? true);
+  const [titleNoteFolder, setTitleNoteFolder] = useState(column.titleNoteFolder || "");
+  const [relationTargetPath, setRelationTargetPath] = useState(column.relationTargetPath || "");
+  const [relationMultiple, setRelationMultiple] = useState(column.relationMultiple ?? false);
+  const [relationDatabaseFiles, setRelationDatabaseFiles] = useState<TFile[]>([]);
+
+  const availableTypes = COLUMN_TYPES.filter((t) =>
+    t.value !== "title" ||
+    type === "title" ||
+    !columns.some((c) => (c.columnIndex !== column.columnIndex || c.name !== column.name) && c.type === "title")
+  );
+
+  useEffect(() => {
+    if (type !== "relation") {
+      setRelationDatabaseFiles([]);
+      return;
+    }
+
+    let cancelled = false;
+    const csvdbFiles = app.vault.getFiles().filter((file) => file.extension === "csvdb");
+    void Promise.all(
+      csvdbFiles.map(async (file) => ({
+        file,
+        hasTitle: file.path === databasePath
+          ? columns.some((c) => c.type === "title")
+          : await fileHasTitleColumn(app, file),
+      }))
+    ).then((results) => {
+      if (cancelled) return;
+      const files = results.filter((result) => result.hasTitle).map((result) => result.file);
+      const targetPaths = new Set(files.map((file) => formatRelationTargetPath(file.path, databasePath)));
+      setRelationDatabaseFiles(files);
+      if (relationTargetPath && !targetPaths.has(relationTargetPath)) {
+        setRelationTargetPath("");
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [app, columns, databasePath, type]);
 
   const handleSave = () => {
-    onSave(name, type, options, wrapContent);
+    onSave(name, type, options, wrapContent, titleNoteEnabled, titleNoteFolder, relationTargetPath, relationMultiple);
   };
 
   const handleDelete = () => {
@@ -218,7 +262,7 @@ function ColumnModalContent({ app, column, onSave, onDelete, onRemoveOption }: C
             value={type}
             onChange={(e) => setType(e.target.value as ColumnType)}
           >
-            {COLUMN_TYPES.map((t) => (
+            {availableTypes.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
               </option>
@@ -269,13 +313,83 @@ function ColumnModalContent({ app, column, onSave, onDelete, onRemoveOption }: C
         </div>
       )}
 
+      {type === "title" && (
+        <>
+          <div className="csv-db-modal-field csv-db-modal-checkbox-field">
+            <label className="csv-db-modal-checkbox-label">
+              <input
+                type="checkbox"
+                checked={titleNoteEnabled}
+                onChange={(e) => setTitleNoteEnabled(e.target.checked)}
+              />
+              Link to note
+            </label>
+          </div>
+
+          {titleNoteEnabled && (
+            <div className="csv-db-modal-field">
+              <label className="csv-db-modal-label">Note folder</label>
+              <input
+                className="csv-db-modal-input"
+                value={titleNoteFolder}
+                placeholder="Folder path"
+                onChange={(e) => setTitleNoteFolder(e.target.value)}
+              />
+              <div className="csv-db-modal-help">
+                Relative paths are resolved from this database's folder. Start with / to resolve from the vault root.
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {type === "relation" && (
+        <>
+          <div className="csv-db-modal-field">
+            <label className="csv-db-modal-label">Target database</label>
+            <div className="csv-db-select-wrapper">
+              <select
+                className="csv-db-modal-select"
+                value={relationTargetPath}
+                onChange={(e) => setRelationTargetPath(e.target.value)}
+              >
+                <option value="">Select a database</option>
+                {relationDatabaseFiles.map((file) => (
+                  <option key={file.path} value={formatRelationTargetPath(file.path, databasePath)}>
+                    {formatRelationTargetPath(file.path, databasePath)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="csv-db-modal-help">
+              Only databases with a Title column can be selected as relation targets.
+            </div>
+          </div>
+
+          <div className="csv-db-modal-field csv-db-modal-checkbox-field">
+            <label className="csv-db-modal-checkbox-label">
+              <input
+                type="checkbox"
+                checked={relationMultiple}
+                onChange={(e) => setRelationMultiple(e.target.checked)}
+              />
+              Allow multiple targets
+            </label>
+          </div>
+        </>
+      )}
+
       <div className="csv-db-modal-actions">
         <button className="csv-db-modal-btn csv-db-modal-btn-danger" onClick={handleDelete}>
           Delete column
         </button>
-        <button className="csv-db-modal-btn csv-db-modal-btn-primary" onClick={handleSave}>
-          Save
-        </button>
+          <button
+            className="csv-db-modal-btn csv-db-modal-btn-primary"
+            onClick={handleSave}
+            disabled={type === "relation" && !relationTargetPath}
+          >
+            Save
+          </button>
       </div>
     </>
   );
@@ -283,7 +397,9 @@ function ColumnModalContent({ app, column, onSave, onDelete, onRemoveOption }: C
 
 export class ColumnModalWrapper extends Modal {
   private column: ColumnDef;
-  private onSaveCallback: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean) => void;
+  private columns: ColumnDef[];
+  private databasePath: string;
+  private onSaveCallback: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean, titleNoteEnabled: boolean, titleNoteFolder: string, relationTargetPath: string, relationMultiple: boolean) => void;
   private onDeleteCallback: () => void;
   private onRemoveOptionCallback: (value: string, removeData: boolean) => void;
   private reactRoot: Root | null = null;
@@ -291,12 +407,16 @@ export class ColumnModalWrapper extends Modal {
   constructor(
     app: App,
     column: ColumnDef,
-    onSave: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean) => void,
+    columns: ColumnDef[],
+    databasePath: string,
+    onSave: (name: string, type: ColumnType, options: SelectOption[], wrapContent: boolean, titleNoteEnabled: boolean, titleNoteFolder: string, relationTargetPath: string, relationMultiple: boolean) => void,
     onDelete: () => void,
     onRemoveOption: (value: string, removeData: boolean) => void
   ) {
     super(app);
     this.column = column;
+    this.columns = columns;
+    this.databasePath = databasePath;
     this.onSaveCallback = onSave;
     this.onDeleteCallback = onDelete;
     this.onRemoveOptionCallback = onRemoveOption;
@@ -309,8 +429,10 @@ export class ColumnModalWrapper extends Modal {
       <ColumnModalContent
         app={this.app}
         column={this.column}
-        onSave={(name, type, options, wrapContent) => {
-          this.onSaveCallback(name, type, options, wrapContent);
+        columns={this.columns}
+        databasePath={this.databasePath}
+        onSave={(name, type, options, wrapContent, titleNoteEnabled, titleNoteFolder, relationTargetPath, relationMultiple) => {
+          this.onSaveCallback(name, type, options, wrapContent, titleNoteEnabled, titleNoteFolder, relationTargetPath, relationMultiple);
           this.close();
         }}
         onDelete={() => {

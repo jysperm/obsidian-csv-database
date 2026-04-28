@@ -2,6 +2,7 @@ import { useReducer, useEffect, useRef, useCallback, useMemo, useState } from "r
 import { App } from "obsidian";
 import { DatabaseModel, ColumnDef, ColumnType, SelectOption, DisplayColumn, ViewDef, SortRule, FilterRule } from "../types";
 import { splitMultiSelect, joinMultiSelect } from "../csv-parser";
+import { splitRelationValue } from "../relation-utils";
 import { TableHeader } from "./TableHeader";
 import { TableBody } from "./TableBody";
 import { NewRowButton } from "./NewRowButton";
@@ -13,7 +14,7 @@ import { RowDetailModalWrapper } from "./RowDetailModal";
 import { useColumnResize } from "../hooks/useColumnResize";
 import { useColumnDrag } from "../hooks/useColumnDrag";
 import { KanbanView } from "./KanbanView";
-import { AppContext } from "../AppContext";
+import { AppContext, DatabaseModelContext, DatabasePathContext } from "../AppContext";
 
 type Action =
   | { type: "SET_MODEL"; model: DatabaseModel; fromExternal?: boolean }
@@ -23,7 +24,7 @@ type Action =
   | { type: "DELETE_ROW"; rowIdx: number }
   | { type: "ADD_COLUMN"; column: ColumnDef }
   | { type: "DELETE_COLUMN"; colIdx: number }
-  | { type: "UPDATE_COLUMN"; colIdx: number; name: string; colType: ColumnType; options: SelectOption[]; wrapContent: boolean }
+  | { type: "UPDATE_COLUMN"; colIdx: number; name: string; colType: ColumnType; options: SelectOption[]; wrapContent: boolean; titleNoteEnabled: boolean; titleNoteFolder: string; relationTargetPath: string; relationMultiple: boolean }
   | { type: "SET_COLUMN_WIDTH"; colIdx: number; width: number }
   | { type: "ADD_SELECT_OPTION"; colIdx: number; option: SelectOption }
   | { type: "UPDATE_SELECT_OPTION"; colIdx: number; oldValue: string; newOption: SelectOption | null }
@@ -67,15 +68,54 @@ function removeColumnFromViews(views: ViewDef[], columnName: string): ViewDef[] 
   }));
 }
 
+function ensureUniqueTitleValue(value: string, rows: string[][], colIdx: number, rowIdx: number): string {
+  if (!value) return value;
+
+  const existing = new Set(
+    rows
+      .filter((_, i) => i !== rowIdx)
+      .map((row) => row[colIdx])
+      .filter(Boolean)
+  );
+  if (!existing.has(value)) return value;
+
+  let i = 2;
+  while (existing.has(`${value} ${i}`)) i++;
+  return `${value} ${i}`;
+}
+
+function ensureUniqueTitleRows(rows: string[][], colIdx: number): string[][] {
+  const seen = new Set<string>();
+  return rows.map((row) => {
+    const value = row[colIdx];
+    if (!value) return row;
+
+    let uniqueValue = value;
+    let i = 2;
+    while (seen.has(uniqueValue)) {
+      uniqueValue = `${value} ${i}`;
+      i++;
+    }
+    seen.add(uniqueValue);
+
+    if (uniqueValue === value) return row;
+    return row.map((cell, ci) => (ci === colIdx ? uniqueValue : cell));
+  });
+}
+
 function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
   switch (action.type) {
     case "SET_MODEL":
       return action.model;
 
     case "SET_CELL": {
+      const column = state.columns[action.colIdx];
+      const value = column?.type === "title"
+        ? ensureUniqueTitleValue(action.value, state.rows, action.colIdx, action.rowIdx)
+        : action.value;
       const rows = state.rows.map((row, ri) =>
         ri === action.rowIdx
-          ? row.map((cell, ci) => (ci === action.colIdx ? action.value : cell))
+          ? row.map((cell, ci) => (ci === action.colIdx ? value : cell))
           : row
       );
       return { ...state, rows };
@@ -90,7 +130,9 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
       const newRow = Array.from({ length: state.columns.length }, () => "");
       for (const { colIdx, value } of action.values) {
         if (colIdx >= 0 && colIdx < newRow.length) {
-          newRow[colIdx] = value;
+          newRow[colIdx] = state.columns[colIdx].type === "title"
+            ? ensureUniqueTitleValue(value, state.rows, colIdx, -1)
+            : value;
         }
       }
       return { ...state, rows: [...state.rows, newRow] };
@@ -136,7 +178,15 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
       newName = ensureUniqueColumnName(newName, otherNames);
 
       const columns = state.columns.map((col, i) => {
-        if (i !== action.colIdx) return col;
+        if (i !== action.colIdx) {
+          if (action.colType === "title" && col.type === "title") {
+            const updated = { ...col, type: "text" as const };
+            delete updated.titleNoteEnabled;
+            delete updated.titleNoteFolder;
+            return updated;
+          }
+          return col;
+        }
         const updated: ColumnDef = {
           ...col,
           name: newName,
@@ -148,6 +198,20 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
         } else {
           delete updated.options;
         }
+        if (action.colType === "title") {
+          updated.titleNoteEnabled = action.titleNoteEnabled;
+          updated.titleNoteFolder = action.titleNoteFolder || undefined;
+        } else {
+          delete updated.titleNoteEnabled;
+          delete updated.titleNoteFolder;
+        }
+        if (action.colType === "relation") {
+          updated.relationTargetPath = action.relationTargetPath || undefined;
+          updated.relationMultiple = action.relationMultiple || undefined;
+        } else {
+          delete updated.relationTargetPath;
+          delete updated.relationMultiple;
+        }
         return updated;
       });
 
@@ -156,7 +220,11 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
         ? updateViewReferences(state.views, oldName, newName)
         : state.views;
 
-      return { ...state, columns, views };
+      const rows = action.colType === "title"
+        ? ensureUniqueTitleRows(state.rows, action.colIdx)
+        : state.rows;
+
+      return { ...state, columns, rows, views };
     }
 
     case "REMOVE_OPTION_DEF": {
@@ -318,9 +386,12 @@ function applyFilters(
           return cell !== "";
         case "contains": {
           if (filter.value.length === 0) return true;
-          if (colType === "multiselect") {
+          if (colType === "multiselect" || colType === "relation") {
             const cellValues = splitMultiSelect(cell);
-            return filter.value.some((v) => cellValues.includes(v));
+            const values = colType === "relation"
+              ? splitRelationValue(cell, columns[colIdx])
+              : cellValues;
+            return filter.value.some((v) => values.includes(v));
           }
           if (colType === "select") {
             return filter.value.includes(cell);
@@ -330,9 +401,11 @@ function applyFilters(
         }
         case "does-not-contain": {
           if (filter.value.length === 0) return true;
-          if (colType === "multiselect") {
-            const cellValues = splitMultiSelect(cell);
-            return !filter.value.some((v) => cellValues.includes(v));
+          if (colType === "multiselect" || colType === "relation") {
+            const values = colType === "relation"
+              ? splitRelationValue(cell, columns[colIdx])
+              : splitMultiSelect(cell);
+            return !filter.value.some((v) => values.includes(v));
           }
           if (colType === "select") {
             return !filter.value.includes(cell);
@@ -395,6 +468,7 @@ interface DatabaseTableProps {
   onModelChange: (model: DatabaseModel) => void;
   setModelSetter: (setter: (model: DatabaseModel) => void) => void;
   app: App;
+  databasePath: string;
 }
 
 export function DatabaseTable({
@@ -402,6 +476,7 @@ export function DatabaseTable({
   onModelChange,
   setModelSetter,
   app,
+  databasePath,
 }: DatabaseTableProps) {
   const [model, dispatch] = useReducer(databaseReducer, initialModel);
   const isExternalUpdate = useRef(false);
@@ -591,8 +666,13 @@ export function DatabaseTable({
     useColumnDrag({ onReorder: handleReorderColumn, tableRef });
 
   const handleSetCell = useCallback((rowIdx: number, colIdx: number, value: string) => {
-    dispatch({ type: "SET_CELL", rowIdx, colIdx, value });
-  }, []);
+    const column = model.columns[colIdx];
+    const nextValue = column?.type === "title"
+      ? ensureUniqueTitleValue(value, model.rows, colIdx, rowIdx)
+      : value;
+    dispatch({ type: "SET_CELL", rowIdx, colIdx, value: nextValue });
+    return nextValue;
+  }, [model.columns, model.rows]);
 
   const handleDeleteRow = useCallback((rowIdx: number) => {
     dispatch({ type: "DELETE_ROW", rowIdx });
@@ -628,8 +708,10 @@ export function DatabaseTable({
       const modal = new ColumnModalWrapper(
         app,
         col,
-        (name, colType, options, wrapContent) => {
-          dispatch({ type: "UPDATE_COLUMN", colIdx: dataIdx, name, colType, options, wrapContent });
+        model.columns,
+        databasePath,
+        (name, colType, options, wrapContent, titleNoteEnabled, titleNoteFolder, relationTargetPath, relationMultiple) => {
+          dispatch({ type: "UPDATE_COLUMN", colIdx: dataIdx, name, colType, options, wrapContent, titleNoteEnabled, titleNoteFolder, relationTargetPath, relationMultiple });
         },
         () => {
           dispatch({ type: "DELETE_COLUMN", colIdx: dataIdx });
@@ -653,9 +735,11 @@ export function DatabaseTable({
     const modal = new RowDetailModalWrapper(
       app, row, rowOriginalIndex, allDisplayColumns,
       handleSetCell, handleAddSelectOption, handleUpdateSelectOption, handleRemoveOptionDef,
+      databasePath,
+      model,
     );
     modal.open();
-  }, [app, model.rows, allDisplayColumns, handleSetCell, handleAddSelectOption, handleUpdateSelectOption, handleRemoveOptionDef]);
+  }, [app, model, allDisplayColumns, handleSetCell, handleAddSelectOption, handleUpdateSelectOption, handleRemoveOptionDef, databasePath]);
 
   // View management handlers
   const handleAddView = useCallback(() => {
@@ -689,6 +773,8 @@ export function DatabaseTable({
 
   return (
     <AppContext.Provider value={app}>
+      <DatabasePathContext.Provider value={databasePath}>
+        <DatabaseModelContext.Provider value={model}>
       <div className="csv-db-viewbar">
         <ViewBar
           views={model.views}
@@ -774,6 +860,8 @@ export function DatabaseTable({
           onCardClick={handleCardClick}
         />
       )}
+        </DatabaseModelContext.Provider>
+      </DatabasePathContext.Provider>
     </AppContext.Provider>
   );
 }

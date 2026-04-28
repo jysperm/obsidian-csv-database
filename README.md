@@ -24,11 +24,12 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 
 ## Features
 
-- **Rich column types**: text, number, date, checkbox, select, multi-select, and note (links to vault notes)
+- **Rich column types**: text, number, date, checkbox, select, multi-select, note, title, and relation
 - **Inline editing**: click any cell to edit its value directly
 - **Column management**: rename, change type, configure options, resize, reorder, and delete columns
 - **Wrap content**: per-column toggle to wrap cell content to multiple lines
 - **Select & multi-select**: color-coded tags with a dropdown picker
+- **Title & relation**: give each row a unique title and reference rows from other databases
 - **Multiple views**: create named views, each with its own sort, filter, and column visibility settings
 - **Board layout**: kanban-style board view grouped by a select column, with drag-and-drop between columns
 - **Sort & filter**: sort by multiple columns, filter with contains / does not contain / is empty / is not empty operators
@@ -37,7 +38,7 @@ An [Obsidian](https://obsidian.md) plugin that provides an interactive database 
 ## Installation
 
 <details>
-<summary>This plugin has not yet been approved in the Obsidian community plugin directory (review in progress).</summary>
+<summary>This plugin has not yet been approved in the Obsidian community plugin directory (<a href="https://github.com/obsidianmd/obsidian-releases/pull/10269">review in progress</a>).</summary>
 
 1. Open **Settings** → **Community Plugins** → **Browse**
 2. Search for **CSV Database**

@@ -20,6 +20,8 @@ export const COLUMN_TYPES: { value: ColumnType; label: string }[] = [
   { value: "select", label: "Select" },
   { value: "multiselect", label: "Multi-select" },
   { value: "note", label: "Note" },
+  { value: "title", label: "Title" },
+  { value: "relation", label: "Relation" },
 ];
 
 export const TAG_COLOR_OPTIONS: TagColor[] = [
@@ -40,7 +42,8 @@ export function getTypeIcon(type: string): string {
     case "select": return "▾";
     case "multiselect": return "≡";
     case "note": return "↗";
+    case "title": return "T";
+    case "relation": return "⇄";
     default: return "Aa";
   }
 }
-
