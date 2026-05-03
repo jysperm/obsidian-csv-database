@@ -62,8 +62,8 @@ export function useColumnDrag({ onReorder, tableRef }: UseColumnDragOptions) {
         const rows = table.querySelectorAll("tr");
         const cells: { el: HTMLElement; delta: number }[] = [];
         rows.forEach((row) => {
-          const fc = row.children[fromIdx] as HTMLElement;
-          const nc = row.children[neighborIdx] as HTMLElement;
+          const fc = row.children[fromIdx + 1] as HTMLElement;
+          const nc = row.children[neighborIdx + 1] as HTMLElement;
           if (fc?.tagName === "TH" || fc?.tagName === "TD") {
             cells.push({ el: fc, delta: fromDelta });
           }

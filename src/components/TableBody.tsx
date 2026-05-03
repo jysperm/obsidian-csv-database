@@ -6,6 +6,8 @@ interface TableBodyProps {
   displayColumns: DisplayColumn[];
   onSetCell: (rowIdx: number, colIdx: number, value: string) => void;
   onDeleteRow: (rowIdx: number) => void;
+  onReorderRow: (fromRowIdx: number, toRowIdx: number, position: "before" | "after") => void;
+  canReorderRows: boolean;
   onAddSelectOption: (colIdx: number, option: SelectOption) => void;
   onUpdateSelectOption: (colIdx: number, oldValue: string, newOption: SelectOption | null) => void;
   onRemoveOptionDef: (colIdx: number, value: string) => void;
@@ -16,6 +18,8 @@ export function TableBody({
   displayColumns,
   onSetCell,
   onDeleteRow,
+  onReorderRow,
+  canReorderRows,
   onAddSelectOption,
   onUpdateSelectOption,
   onRemoveOptionDef,
@@ -30,6 +34,8 @@ export function TableBody({
           displayColumns={displayColumns}
           onSetCell={onSetCell}
           onDeleteRow={onDeleteRow}
+          onReorderRow={onReorderRow}
+          canReorderRows={canReorderRows}
           onAddSelectOption={onAddSelectOption}
           onUpdateSelectOption={onUpdateSelectOption}
           onRemoveOptionDef={onRemoveOptionDef}

@@ -133,6 +133,10 @@ Each column has a `columnIndex` field that determines its display position. The 
 
 Mousedown on a header cell + 5px drag threshold enters drag mode. Columns swap in real-time as the cursor crosses the current column's boundary, with a 150ms slide animation.
 
+### Manual Row Ordering
+
+Rows can be manually reordered in table layout when no sort rules are active. Hovering a row reveals a drag handle just outside the left edge. Dragging highlights only insert positions that would change row order, and committing the drag reorders `model.rows`.
+
 ### Wrap Content
 
 Each column has an optional `wrapContent` flag. When enabled, cell content wraps to multiple lines and rows auto-expand in height. When disabled (default), content is clipped at the cell boundary. A single-line wrap cell still matches the standard row height.
@@ -233,7 +237,7 @@ The React UI is rooted in `DatabaseTable`, which uses `useReducer` to manage the
 
 ### Column Display Order
 
-`DatabaseTable` computes a `displayColumns: DisplayColumn[]` (sorted by `columnIndex`) for rendering. All UI components receive `displayColumns` and use `dataIdx` (the column's index in the data array) for data operations, and the rendering loop index for DOM operations (resize, drag). The column and row data order in the CSV file never changes — `rows[r][i]` always corresponds to `columns[i]`. `serializeCSV` writes columns and rows in their original array order.
+`DatabaseTable` computes a `displayColumns: DisplayColumn[]` (sorted by `columnIndex`) for rendering. All UI components receive `displayColumns` and use `dataIdx` (the column's index in the data array) for data operations, and the rendering loop index for DOM operations (resize, drag). Column data order in the CSV file never changes, so `rows[r][i]` always corresponds to `columns[i]`. Manual row ordering changes `model.rows` order, and `serializeCSV` writes rows in that current order.
 
 ### Column Drag-to-Reorder
 

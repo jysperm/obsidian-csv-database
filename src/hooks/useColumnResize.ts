@@ -17,7 +17,7 @@ export function useColumnResize({ onResizeEnd }: UseColumnResizeOptions) {
       const colGroup = colGroupRef.current;
       if (!colGroup) return;
 
-      const colEl = colGroup.children[colIdx] as HTMLElement;
+      const colEl = colGroup.children[colIdx + 1] as HTMLElement;
       if (!colEl) return;
 
       const startX = e.clientX;

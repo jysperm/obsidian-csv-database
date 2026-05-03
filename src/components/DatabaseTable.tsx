@@ -22,6 +22,7 @@ type Action =
   | { type: "ADD_ROW" }
   | { type: "ADD_ROW_WITH_VALUES"; values: { colIdx: number; value: string }[] }
   | { type: "DELETE_ROW"; rowIdx: number }
+  | { type: "REORDER_ROW"; fromRowIdx: number; toRowIdx: number; position: "before" | "after" }
   | { type: "ADD_COLUMN"; column: ColumnDef }
   | { type: "DELETE_COLUMN"; colIdx: number }
   | { type: "UPDATE_COLUMN"; colIdx: number; name: string; colType: ColumnType; options: SelectOption[]; wrapContent: boolean; titleNoteEnabled: boolean; titleNoteFolder: string; relationTargetPath: string; relationMultiple: boolean }
@@ -140,6 +141,21 @@ function databaseReducer(state: DatabaseModel, action: Action): DatabaseModel {
 
     case "DELETE_ROW": {
       const rows = state.rows.filter((_, i) => i !== action.rowIdx);
+      return { ...state, rows };
+    }
+
+    case "REORDER_ROW": {
+      const { fromRowIdx, toRowIdx, position } = action;
+      if (fromRowIdx === toRowIdx) return state;
+
+      const movingRow = state.rows[fromRowIdx];
+      if (!movingRow || !state.rows[toRowIdx]) return state;
+
+      const rows = state.rows.filter((_, i) => i !== fromRowIdx);
+      const targetIdx = rows.indexOf(state.rows[toRowIdx]);
+      const insertIdx = position === "after" ? targetIdx + 1 : targetIdx;
+      rows.splice(insertIdx, 0, movingRow);
+
       return { ...state, rows };
     }
 
@@ -678,6 +694,10 @@ export function DatabaseTable({
     dispatch({ type: "DELETE_ROW", rowIdx });
   }, []);
 
+  const handleReorderRow = useCallback((fromRowIdx: number, toRowIdx: number, position: "before" | "after") => {
+    dispatch({ type: "REORDER_ROW", fromRowIdx, toRowIdx, position });
+  }, []);
+
   const handleAddRow = useCallback(() => {
     dispatch({ type: "ADD_ROW" });
   }, []);
@@ -770,6 +790,7 @@ export function DatabaseTable({
   totalWidth += 32; // add-column button width
 
   const activeLayout = activeView.layout || "table";
+  const canReorderRows = effectiveSorts.length === 0;
 
   return (
     <AppContext.Provider value={app}>
@@ -820,6 +841,7 @@ export function DatabaseTable({
               style={{ width: `${totalWidth}px` }}
             >
               <colgroup ref={colGroupRef}>
+                <col style={{ width: "0px" }} />
                 {displayColumns.map(({ col }, i) => (
                   <col key={i} style={{ width: `${col.width ?? 180}px` }} />
                 ))}
@@ -840,6 +862,8 @@ export function DatabaseTable({
                 displayColumns={displayColumns}
                 onSetCell={handleSetCell}
                 onDeleteRow={handleDeleteRow}
+                onReorderRow={handleReorderRow}
+                canReorderRows={canReorderRows}
                 onAddSelectOption={handleAddSelectOption}
                 onUpdateSelectOption={handleUpdateSelectOption}
                 onRemoveOptionDef={handleRemoveOptionDef}

@@ -26,6 +26,7 @@ export function TableHeader({
   return (
     <thead>
       <tr>
+        <th className="csv-db-row-drag-header" />
         {displayColumns.map(({ col, dataIdx }, displayIdx) => {
           const isDragged = dragState.isDragging && dragState.dragColIdx === displayIdx;
 

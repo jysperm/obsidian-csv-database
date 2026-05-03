@@ -7,6 +7,8 @@ interface TableRowProps {
   displayColumns: DisplayColumn[];
   onSetCell: (rowIdx: number, colIdx: number, value: string) => void;
   onDeleteRow: (rowIdx: number) => void;
+  onReorderRow: (fromRowIdx: number, toRowIdx: number, position: "before" | "after") => void;
+  canReorderRows: boolean;
   onAddSelectOption: (colIdx: number, option: SelectOption) => void;
   onUpdateSelectOption: (colIdx: number, oldValue: string, newOption: SelectOption | null) => void;
   onRemoveOptionDef: (colIdx: number, value: string) => void;
@@ -18,12 +20,30 @@ export function TableRow({
   displayColumns,
   onSetCell,
   onDeleteRow,
+  onReorderRow,
+  canReorderRows,
   onAddSelectOption,
   onUpdateSelectOption,
   onRemoveOptionDef,
 }: TableRowProps) {
   return (
-    <tr className="csv-db-row">
+    <tr className="csv-db-row" data-row-index={rowIdx}>
+      <td className="csv-db-row-drag-action">
+        {canReorderRows && (
+          <span
+            className="csv-db-row-drag-handle"
+            onMouseDown={(e) => startRowDrag(e, rowIdx, onReorderRow)}
+            aria-label="Drag row"
+          >
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+          </span>
+        )}
+      </td>
       {displayColumns.map(({ col, dataIdx }) => (
         <Cell
           key={dataIdx}
@@ -46,4 +66,75 @@ export function TableRow({
       </td>
     </tr>
   );
+}
+
+function startRowDrag(
+  e: React.MouseEvent,
+  rowIdx: number,
+  onReorderRow: (fromRowIdx: number, toRowIdx: number, position: "before" | "after") => void,
+) {
+  if (e.button !== 0) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const startX = e.clientX;
+  const startY = e.clientY;
+  let dragging = false;
+  let dropTarget: HTMLTableRowElement | null = null;
+  let dropPosition: "before" | "after" = "before";
+
+  const clearDropTarget = () => {
+    if (!dropTarget) return;
+    dropTarget.classList.remove("csv-db-row-drop-before", "csv-db-row-drop-after");
+    dropTarget = null;
+  };
+
+  const onMove = (ev: MouseEvent) => {
+    if (!dragging) {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      dragging = true;
+      document.body.classList.add("csv-db-row-dragging");
+    }
+
+    const target = document.elementFromPoint(ev.clientX, ev.clientY);
+    const rowEl = target?.closest(".csv-db-row");
+    clearDropTarget();
+
+    if (!(rowEl instanceof HTMLTableRowElement)) return;
+    const targetRowIdx = Number(rowEl.dataset.rowIndex);
+    if (!Number.isFinite(targetRowIdx) || targetRowIdx === rowIdx) return;
+
+    const rect = rowEl.getBoundingClientRect();
+    dropPosition = ev.clientY > rect.top + rect.height / 2 ? "after" : "before";
+    if (!wouldReorderChange(rowIdx, targetRowIdx, dropPosition)) return;
+
+    dropTarget = rowEl;
+    rowEl.classList.add(dropPosition === "after" ? "csv-db-row-drop-after" : "csv-db-row-drop-before");
+  };
+
+  const onUp = () => {
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+    document.body.classList.remove("csv-db-row-dragging");
+
+    const targetRowIdx = dropTarget ? Number(dropTarget.dataset.rowIndex) : NaN;
+    clearDropTarget();
+
+    if (dragging && Number.isFinite(targetRowIdx)) {
+      onReorderRow(rowIdx, targetRowIdx, dropPosition);
+    }
+  };
+
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+}
+
+function wouldReorderChange(fromRowIdx: number, toRowIdx: number, position: "before" | "after") {
+  if (fromRowIdx === toRowIdx) return false;
+  if (position === "before" && toRowIdx === fromRowIdx + 1) return false;
+  if (position === "after" && toRowIdx === fromRowIdx - 1) return false;
+  return true;
 }
