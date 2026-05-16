@@ -1,7 +1,7 @@
 import { ColumnType, TagColor } from "./types";
 
 export const TAG_COLORS: Record<TagColor, { bg: string; text: string }> = {
-  gray:   { bg: "#E3E2E080", text: "#5A5A5A" },
+  gray:   { bg: "var(--csv-db-tag-gray-bg, #E3E2E080)", text: "var(--csv-db-tag-gray-text, #5A5A5A)" },
   brown:  { bg: "#EEE0DA",   text: "#6B4C3B" },
   orange: { bg: "#FADEC9",   text: "#AD5700" },
   yellow: { bg: "#FDECC8",   text: "#AD7700" },

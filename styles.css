@@ -310,6 +310,11 @@ body.csv-db-row-dragging .csv-db-row:hover .csv-db-row-drag-handle {
 }
 
 /* Tags */
+body.theme-dark {
+  --csv-db-tag-gray-bg: rgba(227, 226, 224, 0.68);
+  --csv-db-tag-gray-text: #3f3f3f;
+}
+
 .csv-db-tag {
   display: inline-flex;
   align-items: center;

@@ -229,6 +229,12 @@ Sort and filter changes are managed as draft state while the bar is open:
 
 Default (no color): same as `gray`.
 
+Dark mode overrides:
+
+| Color | Background                   | Text      |
+| ----- | ---------------------------- | --------- |
+| gray  | `rgba(227, 226, 224, 0.68)` | `#3f3f3f` |
+
 ## Implementation
 
 `DatabasePlugin` (`main.ts`) registers the view type and file extension. `DatabaseView` (`database-view.ts`) extends Obsidian's `TextFileView`, bridging file I/O with a React component tree mounted via `createRoot`. `csv-parser.ts` handles CSV parsing/serialization using PapaParse.
