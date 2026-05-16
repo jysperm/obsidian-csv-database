@@ -101,7 +101,7 @@ function FilterSelectDropdown({
         ))}
       </div>
     </div>,
-    document.body
+    activeDocument.body
   );
 }
 
@@ -121,21 +121,22 @@ function FilterSelectValueTrigger({
   // Close dropdown on click outside (but not on trigger) or Escape
   useEffect(() => {
     if (!open) return;
+    const doc = activeDocument;
     const handleClick = (e: MouseEvent) => {
       const target = e.target as Node;
       if (triggerRef.current?.contains(target)) return;
-      const dropdownEl = document.querySelector("[data-csv-db-filter-dropdown]");
+      const dropdownEl = doc.querySelector("[data-csv-db-filter-dropdown]");
       if (dropdownEl && dropdownEl.contains(target)) return;
       setOpen(false);
     };
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
+    doc.addEventListener("mousedown", handleClick);
+    doc.addEventListener("keydown", handleKey);
     return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
+      doc.removeEventListener("mousedown", handleClick);
+      doc.removeEventListener("keydown", handleKey);
     };
   }, [open]);
 
@@ -198,6 +199,7 @@ export function FilterPillEditor({ filter, columns, onUpdate, onDelete, onClose 
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const doc = activeDocument;
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (ref.current && !ref.current.contains(target) && !target.closest("[data-csv-db-filter-dropdown]")) {
@@ -207,11 +209,11 @@ export function FilterPillEditor({ filter, columns, onUpdate, onDelete, onClose 
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
+    doc.addEventListener("mousedown", handleClick);
+    doc.addEventListener("keydown", handleKey);
     return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
+      doc.removeEventListener("mousedown", handleClick);
+      doc.removeEventListener("keydown", handleKey);
     };
   }, [onClose]);
 

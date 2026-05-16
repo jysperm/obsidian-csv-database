@@ -8,6 +8,9 @@ export function useClickOutside(
   useEffect(() => {
     if (!active) return;
 
+    const doc = activeDocument;
+    const win = activeWindow;
+
     const listener = (e: MouseEvent) => {
       for (const ref of refs) {
         if (ref.current && ref.current.contains(e.target as Node)) {
@@ -24,15 +27,15 @@ export function useClickOutside(
     };
 
     // Delay to avoid catching the click that opened the dropdown
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", listener);
+    const timer = win.setTimeout(() => {
+      doc.addEventListener("mousedown", listener);
     }, 0);
-    document.addEventListener("keydown", keyListener);
+    doc.addEventListener("keydown", keyListener);
 
     return () => {
-      clearTimeout(timer);
-      document.removeEventListener("mousedown", listener);
-      document.removeEventListener("keydown", keyListener);
+      win.clearTimeout(timer);
+      doc.removeEventListener("mousedown", listener);
+      doc.removeEventListener("keydown", keyListener);
     };
   }, [refs, handler, active]);
 }

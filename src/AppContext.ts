@@ -24,5 +24,5 @@ export const PortalContainerContext = createContext<HTMLElement | null>(null);
 
 export function usePortalContainer(): HTMLElement {
   const container = useContext(PortalContainerContext);
-  return container ?? document.body;
+  return container ?? activeDocument.body;
 }

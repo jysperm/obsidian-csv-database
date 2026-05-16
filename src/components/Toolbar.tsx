@@ -106,6 +106,7 @@ export function Toolbar({
   // Close popover when clicking outside
   useEffect(() => {
     if (openPopover === null) return;
+    const doc = activeDocument;
     const handleClick = (e: MouseEvent) => {
       if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
         setOpenPopover(null);
@@ -114,11 +115,11 @@ export function Toolbar({
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpenPopover(null);
     };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
+    doc.addEventListener("mousedown", handleClick);
+    doc.addEventListener("keydown", handleKey);
     return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
+      doc.removeEventListener("mousedown", handleClick);
+      doc.removeEventListener("keydown", handleKey);
     };
   }, [openPopover]);
 

@@ -36,6 +36,7 @@ export function FilterSortBar({
   // Close sort popover on outside click or Escape
   useEffect(() => {
     if (!sortPopoverOpen) return;
+    const doc = activeDocument;
     const handleClick = (e: MouseEvent) => {
       if (sortPillRef.current && !sortPillRef.current.contains(e.target as Node)) {
         setSortPopoverOpen(false);
@@ -44,17 +45,18 @@ export function FilterSortBar({
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSortPopoverOpen(false);
     };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
+    doc.addEventListener("mousedown", handleClick);
+    doc.addEventListener("keydown", handleKey);
     return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
+      doc.removeEventListener("mousedown", handleClick);
+      doc.removeEventListener("keydown", handleKey);
     };
   }, [sortPopoverOpen]);
 
   // Close save dropdown on outside click or Escape
   useEffect(() => {
     if (!saveDropdownOpen) return;
+    const doc = activeDocument;
     const handleClick = (e: MouseEvent) => {
       if (saveGroupRef.current && !saveGroupRef.current.contains(e.target as Node)) {
         setSaveDropdownOpen(false);
@@ -63,11 +65,11 @@ export function FilterSortBar({
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setSaveDropdownOpen(false);
     };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
+    doc.addEventListener("mousedown", handleClick);
+    doc.addEventListener("keydown", handleKey);
     return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
+      doc.removeEventListener("mousedown", handleClick);
+      doc.removeEventListener("keydown", handleKey);
     };
   }, [saveDropdownOpen]);
 

@@ -78,6 +78,7 @@ function startRowDrag(
   e.preventDefault();
   e.stopPropagation();
 
+  const doc = activeDocument;
   const startX = e.clientX;
   const startY = e.clientY;
   let dragging = false;
@@ -96,10 +97,10 @@ function startRowDrag(
       const dy = ev.clientY - startY;
       if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
       dragging = true;
-      document.body.classList.add("csv-db-row-dragging");
+      doc.body.classList.add("csv-db-row-dragging");
     }
 
-    const target = document.elementFromPoint(ev.clientX, ev.clientY);
+    const target = doc.elementFromPoint(ev.clientX, ev.clientY);
     const rowEl = target?.closest(".csv-db-row");
     clearDropTarget();
 
@@ -116,9 +117,9 @@ function startRowDrag(
   };
 
   const onUp = () => {
-    document.removeEventListener("mousemove", onMove);
-    document.removeEventListener("mouseup", onUp);
-    document.body.classList.remove("csv-db-row-dragging");
+    doc.removeEventListener("mousemove", onMove);
+    doc.removeEventListener("mouseup", onUp);
+    doc.body.classList.remove("csv-db-row-dragging");
 
     const targetRowIdx = dropTarget ? Number(dropTarget.dataset.rowIndex) : NaN;
     clearDropTarget();
@@ -128,8 +129,8 @@ function startRowDrag(
     }
   };
 
-  document.addEventListener("mousemove", onMove);
-  document.addEventListener("mouseup", onUp);
+  doc.addEventListener("mousemove", onMove);
+  doc.addEventListener("mouseup", onUp);
 }
 
 function wouldReorderChange(fromRowIdx: number, toRowIdx: number, position: "before" | "after") {

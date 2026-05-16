@@ -27,6 +27,8 @@ export function useColumnDrag({ onReorder, tableRef }: UseColumnDragOptions) {
     (colIdx: number, e: React.MouseEvent) => {
       if (e.button !== 0) return;
 
+      const doc = activeDocument;
+      const win = activeWindow;
       const startX = e.clientX;
       const startY = e.clientY;
       let dragging = false;
@@ -82,7 +84,7 @@ export function useColumnDrag({ onReorder, tableRef }: UseColumnDragOptions) {
         const reorderToIdx =
           direction === "right" ? fromIdx + 2 : fromIdx - 1;
 
-        setTimeout(() => {
+        win.setTimeout(() => {
           cells.forEach(({ el }) => {
             el.classList.remove("csv-db-col-swapping");
             el.style.removeProperty("--csv-db-swap-offset");
@@ -106,7 +108,7 @@ export function useColumnDrag({ onReorder, tableRef }: UseColumnDragOptions) {
             return;
           }
           dragging = true;
-          document.body.classList.add("csv-db-dragging");
+          doc.body.classList.add("csv-db-dragging");
           setDragState({ isDragging: true, dragColIdx: currentIdx });
         }
 
@@ -150,19 +152,19 @@ export function useColumnDrag({ onReorder, tableRef }: UseColumnDragOptions) {
       };
 
       const onUp = () => {
-        document.removeEventListener("mousemove", onMove);
-        document.removeEventListener("mouseup", onUp);
+        doc.removeEventListener("mousemove", onMove);
+        doc.removeEventListener("mouseup", onUp);
 
         dragActive = false;
         if (dragging) {
-          document.body.classList.remove("csv-db-dragging");
+          doc.body.classList.remove("csv-db-dragging");
           setDragState(INITIAL_DRAG_STATE);
           justDraggedRef.current = true;
         }
       };
 
-      document.addEventListener("mousemove", onMove);
-      document.addEventListener("mouseup", onUp);
+      doc.addEventListener("mousemove", onMove);
+      doc.addEventListener("mouseup", onUp);
     },
     [onReorder, tableRef]
   );

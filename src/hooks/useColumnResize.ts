@@ -23,8 +23,9 @@ export function useColumnResize({ onResizeEnd }: UseColumnResizeOptions) {
       const startX = e.clientX;
       const startWidth = parseInt(colEl.style.width, 10) || 180;
 
+      const doc = activeDocument;
       const handle = e.currentTarget as HTMLElement;
-      document.body.classList.add("csv-db-resizing");
+      doc.body.classList.add("csv-db-resizing");
       handle.classList.add("csv-db-resize-active");
 
       const onMove = (ev: MouseEvent) => {
@@ -34,9 +35,9 @@ export function useColumnResize({ onResizeEnd }: UseColumnResizeOptions) {
       };
 
       const onUp = () => {
-        document.removeEventListener("mousemove", onMove);
-        document.removeEventListener("mouseup", onUp);
-        document.body.classList.remove("csv-db-resizing");
+        doc.removeEventListener("mousemove", onMove);
+        doc.removeEventListener("mouseup", onUp);
+        doc.body.classList.remove("csv-db-resizing");
         handle.classList.remove("csv-db-resize-active");
 
         justResizedRef.current = true;
@@ -45,8 +46,8 @@ export function useColumnResize({ onResizeEnd }: UseColumnResizeOptions) {
         onResizeEnd(colIdx, finalWidth);
       };
 
-      document.addEventListener("mousemove", onMove);
-      document.addEventListener("mouseup", onUp);
+      doc.addEventListener("mousemove", onMove);
+      doc.addEventListener("mouseup", onUp);
     },
     [onResizeEnd]
   );

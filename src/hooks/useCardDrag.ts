@@ -20,6 +20,7 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
     (e: React.MouseEvent, rowOriginalIndex: number) => {
       if (e.button !== 0) return;
 
+      const doc = activeDocument;
       const startX = e.clientX;
       const startY = e.clientY;
       const cardEl = (e.currentTarget as HTMLElement).closest(".csv-db-kanban-card");
@@ -42,7 +43,7 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
             return;
           }
           dragging = true;
-          document.body.classList.add("csv-db-card-dragging");
+          doc.body.classList.add("csv-db-card-dragging");
 
           // Create ghost
           const ghost = cardEl.cloneNode(true) as HTMLElement;
@@ -51,7 +52,7 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
           ghost.style.width = `${rect.width}px`;
           ghost.style.left = `${rect.left}px`;
           ghost.style.top = `${rect.top}px`;
-          document.body.appendChild(ghost);
+          doc.body.appendChild(ghost);
 
           ghostOffsetX = rect.left - startX;
           ghostOffsetY = rect.top - startY;
@@ -86,12 +87,12 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
       };
 
       const onUp = (ev: MouseEvent) => {
-        document.removeEventListener("mousemove", onMove);
-        document.removeEventListener("mouseup", onUp);
+        doc.removeEventListener("mousemove", onMove);
+        doc.removeEventListener("mouseup", onUp);
 
         if (!dragging) return;
 
-        document.body.classList.remove("csv-db-card-dragging");
+        doc.body.classList.remove("csv-db-card-dragging");
         justDraggedRef.current = true;
         requestAnimationFrame(() => { justDraggedRef.current = false; });
 
@@ -120,8 +121,8 @@ export function useCardDrag({ onCardMove }: UseCardDragOptions) {
         dragRef.current = null;
       };
 
-      document.addEventListener("mousemove", onMove);
-      document.addEventListener("mouseup", onUp);
+      doc.addEventListener("mousemove", onMove);
+      doc.addEventListener("mouseup", onUp);
     },
     [onCardMove]
   );

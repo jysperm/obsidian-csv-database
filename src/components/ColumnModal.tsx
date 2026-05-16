@@ -93,6 +93,7 @@ function ColorSwatchPicker({ color, onChange }: { color: TagColor; onChange: (c:
 
   useEffect(() => {
     if (!open) return;
+    const doc = activeDocument;
     const handleDown = (e: MouseEvent) => {
       const target = e.target as Node;
       if (
@@ -105,11 +106,11 @@ function ColorSwatchPicker({ color, onChange }: { color: TagColor; onChange: (c:
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-    document.addEventListener("mousedown", handleDown);
-    document.addEventListener("keydown", handleKey);
+    doc.addEventListener("mousedown", handleDown);
+    doc.addEventListener("keydown", handleKey);
     return () => {
-      document.removeEventListener("mousedown", handleDown);
-      document.removeEventListener("keydown", handleKey);
+      doc.removeEventListener("mousedown", handleDown);
+      doc.removeEventListener("keydown", handleKey);
     };
   }, [open]);
 
@@ -144,7 +145,7 @@ function ColorSwatchPicker({ color, onChange }: { color: TagColor; onChange: (c:
             </div>
           ))}
         </div>,
-        document.body
+        activeDocument.body
       )}
     </>
   );
